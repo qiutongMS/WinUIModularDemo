@@ -1,0 +1,19 @@
+<Project>
+
+  <PropertyGroup>
+    <IncludeExperimental Condition="'$(IncludeExperimental)' == ''">false</IncludeExperimental>
+    <ExperimentalBuildMode Condition="'$(IncludeExperimental)' == 'true'">experimental</ExperimentalBuildMode>
+    <ExperimentalBuildMode Condition="'$(IncludeExperimental)' != 'true'">core</ExperimentalBuildMode>
+
+    <!-- These must be set before Microsoft.Common.props is imported.
+         That is why they live in Directory.Build.props instead of the .csproj. -->
+    <BaseIntermediateOutputPath>obj\$(ExperimentalBuildMode)\</BaseIntermediateOutputPath>
+    <BaseOutputPath>bin\$(ExperimentalBuildMode)\</BaseOutputPath>
+
+    <!-- With separate mode-specific obj/bin folders, the inactive mode's generated XAML files and
+         copied outputs become sibling files under the project tree. Exclude both mode folders from
+         the SDK's default item globs so only the active mode's generated files participate. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);obj\core\**;obj\experimental\**;bin\core\**;bin\experimental\**</DefaultItemExcludes>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="Shell.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <NavigationView
+        x:Name="Nav"
+        IsBackButtonVisible="Collapsed"
+        IsSettingsVisible="False"
+        PaneDisplayMode="Left"
+        Header="Modular WinUI Demo"
+        ItemInvoked="OnItemInvoked">
+
+        <Grid Padding="24">
+            <!-- Hosts a feature whose entry type is a UserControl. -->
+            <ContentControl
+                x:Name="UserControlHost"
+                HorizontalContentAlignment="Stretch"
+                VerticalContentAlignment="Stretch"
+                Visibility="Collapsed" />
+
+            <!-- Hosts a feature whose entry type is a Page. -->
+            <Frame
+                x:Name="PageHost"
+                Visibility="Collapsed" />
+        </Grid>
+    </NavigationView>
+</Window>
