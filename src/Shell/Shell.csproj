@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <TargetFramework>net8.0-windows10.0.22621.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <RootNamespace>Shell</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -11,27 +11,14 @@
     <LangVersion>latest</LangVersion>
     <Platforms>x64;ARM64</Platforms>
     <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
+    <EnableMsixTooling>true</EnableMsixTooling>
     <!-- Unpackaged, self-contained: simplest to build and run from the CLI. -->
     <WindowsPackageType>None</WindowsPackageType>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
-    <EnableMsixTooling>true</EnableMsixTooling>
-
-    <!-- The build-time switch. Default OFF (core-only build).
-         Turn on with:  dotnet build ... -p:IncludeExperimental=true -->
-    <IncludeExperimental Condition="'$(IncludeExperimental)' == ''">false</IncludeExperimental>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.6.250108002" />
-    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.1742" />
-  </ItemGroup>
-
-  <!-- Experimental features are OPTIONAL.
-       This glob auto-references EVERY project under ..\Experimental\ — but only when the
-       flag is set. Add a new feature by dropping a new project in that folder; no edit here.
-       When the flag is off, none of them build and none ship in the output. -->
-  <ItemGroup Condition="'$(IncludeExperimental)' == 'true'">
-    <ProjectReference Include="..\Experimental\**\*.csproj" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" />
   </ItemGroup>
 
 </Project>

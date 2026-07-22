@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<UserControl
-    x:Class="Experimental.HelloUserControl.HelloView"
+<Page
+    x:Class="Shell.DemoPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <StackPanel Spacing="12">
-        <TextBlock Text="Hello from a UserControl feature (XAML)"
+        <TextBlock Text="Hello from a Page feature (XAML)"
                    Style="{ThemeResource TitleTextBlockStyle}" />
         <TextBlock TextWrapping="Wrap"
-                   Text="I am a UserControl defined in XAML. The Shell hosted me by setting ContentControl.Content = new HelloView(). No Page, no Frame." />
-        <Button Content="Click me" Click="OnClick" />
+                   Text="I am a Page defined in XAML. The Shell hosted me via Frame.Navigate(typeof(DemoPage)). Because a Frame drives me, I get navigation lifecycle callbacks." />
         <TextBlock x:Name="Status" Foreground="{ThemeResource SystemAccentColor}" />
     </StackPanel>
-</UserControl>
+</Page>

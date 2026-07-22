@@ -1,98 +1,255 @@
-# WinUI Modular Demo — optional experimental features via a build flag
+# WinUI Modular Demo — optional experimental features via one build flag
 
-A minimal WinUI 3 app showing how to split features into **separate, optional projects**.
-No custom interface. No runtime plugin contract. Two build commands.
+A minimal, framework-agnostic WinUI 3 app that demonstrates the extension model used by the
+[Windows App SDK **WindowsAIFoundry** sample](https://github.com/microsoft/WindowsAppSDK-Samples/tree/main/Samples/WindowsAIFoundry/cs-winui).
+It shows the three moving parts of that pattern in isolation, with nothing else to distract you:
 
-## The idea
+1. **The empty-DLL technique** — one build flag flips the app between a *stable* flavor and an
+   *experimental* flavor without adding or removing projects from the solution.
+2. **Reflection-based navigation discovery** — the Shell has **zero** per-feature code; it finds
+   features at runtime by scanning for a `[NavItem]` attribute.
+3. **Per-flavor build isolation** — stable and experimental artifacts live in separate `bin`/`obj`
+   folders, so you can switch flavors without ever running `dotnet clean`.
 
-- The **Shell** (`src/Shell`) is the core app. It always builds and runs on its own.
-- Each **experimental feature** is its own project under `src/Experimental/Experimental.*`.
-- The Shell references those projects with a **conditional glob** — they are pulled in
-  **only** when you pass `-p:IncludeExperimental=true`.
-- At startup the Shell **reflects** over `Experimental.*.dll` in its output folder and adds
-  one menu item per feature it finds. If a feature wasn't built, its DLL is absent and it
-  simply doesn't appear. **The Shell has zero per-feature code.**
+**The problem it solves.** Code that uses experimental APIs can't build against the stable SDK —
+the types don't exist. Rather than stripping that code or maintaining a separate branch, this
+pattern keeps **one** source tree where a single MSBuild property switches the whole app between
+stable and experimental — no `#if`, no file moves, no broken builds.
+
+## The one switch: `IncludeExperimentalApis`
+
+Everything is driven by a single MSBuild property, `IncludeExperimentalApis` (default **true**).
+
+| | `IncludeExperimentalApis=true` (experimental) | `IncludeExperimentalApis=false` (stable) |
+|---|---|---|
+| Windows App SDK | `2.1.4-experimental8` | `2.1.3` (latest stable) |
+| Extension projects | compile **real code** | compile to **empty DLLs** |
+| Shell references extensions? | yes | no |
+| Menu shows | Home · **Hello** · **Demo** | Home only |
 
 ## Build
 
 ```cmd
-build.cmd                :: core only  -> menu shows just "Home (core)"
-build.cmd experimental   :: core + features -> "Hello" and "Demo" also appear
+build.cmd                :: STABLE flavor       -> menu shows just "Home (core)"
+build.cmd experimental   :: EXPERIMENTAL flavor -> "Hello" and "Demo" also appear
 ```
 
-Equivalent raw command (uses MSBuild — `build.cmd` locates it via vswhere):
+`build.cmd` builds the **whole solution** with MSBuild (located via `vswhere`). Equivalent raw
+commands:
 
 ```cmd
-msbuild src\Shell\Shell.csproj /restore /t:Rebuild /p:Configuration=Debug /p:Platform=x64
-msbuild src\Shell\Shell.csproj /restore /t:Rebuild /p:Configuration=Debug /p:Platform=x64 /p:IncludeExperimental=true
+msbuild WinUIModularDemo.sln /restore /t:Rebuild /p:Configuration=Debug /p:Platform=x64 /p:IncludeExperimentalApis=false
+msbuild WinUIModularDemo.sln /restore /t:Rebuild /p:Configuration=Debug /p:Platform=x64 /p:IncludeExperimentalApis=true
 ```
 
-> WinUI class libraries with XAML need the MSIX/PRI MSBuild tasks that ship with Visual Studio
-> or "Build Tools for Visual Studio". `dotnet build` also works **if** your .NET SDK includes
-> those tasks; some SDKs (e.g. certain .NET 10 previews) don't, in which case use MSBuild.
+`dotnet build WinUIModularDemo.sln -c Debug -p:Platform=x64 -p:IncludeExperimentalApis=<true|false>`
+also works on a .NET SDK that carries the WinUI MSIX/PRI build tasks.
 
 ## Run
 
+The Shell is unpackaged and self-contained, so you can launch the built `.exe` directly:
+
 ```cmd
-dotnet run --project src\Shell\Shell.csproj -p:Configuration=Debug -p:Platform=x64
+:: experimental
+src\Shell\bin\experimental\x64\Debug\net8.0-windows10.0.22621.0\Shell.exe
+:: stable
+src\Shell\bin\stable\x64\Debug\net8.0-windows10.0.22621.0\Shell.exe
 ```
 
-Notes:
-- Core-only `dotnet run` works after the Shell now separates core vs experimental `obj`/`bin` folders.
-- Experimental `dotnet run --project src\Shell\Shell.csproj -p:Configuration=Debug -p:Platform=x64 -p:IncludeExperimental=true`
-  still depends on your installed .NET SDK including the WinUI MSIX/PRI build tasks.
-- On SDKs that do not include them (seen on this machine with `10.0.300-preview.0.26177.108`),
-  use `.\build.cmd experimental` and then run:
+## How it works
 
-  ```cmd
-  src\Shell\bin\experimental\x64\Debug\net10.0-windows10.0.19041.0\Shell.exe
-  ```
+### 1. The empty-DLL technique
 
-## The two feature styles (this is the part you asked about)
+This repo is built as a **solution**, and a solution build compiles **every** project it lists —
+a build-time property cannot drop a project from that set. So an experimental extension can't
+simply "not build" in the stable flavor. Instead it builds with **no content**:
+
+```xml
+<!-- src/Extensions/HelloUserControl/Ext.HelloUserControl.csproj -->
+<EnableDefaultItems Condition="'$(IncludeExperimentalApis)' != 'true'">false</EnableDefaultItems>
+<UseWinUI            Condition="'$(IncludeExperimentalApis)' == 'true'">true</UseWinUI>
+
+<ItemGroup Condition="'$(IncludeExperimentalApis)' == 'true'">
+  <ProjectReference Include="..\..\Contracts\WinUIModularDemo.Contracts.csproj" />
+  <PackageReference Include="Microsoft.WindowsAppSDK" />
+</ItemGroup>
+```
+
+In the stable flavor, `EnableDefaultItems=false` compiles no source, so the project produces an
+**empty assembly**. The solution still builds green. Because the Shell references the experimental
+extensions **only** when the flag is on (see below), the empty DLLs are never copied to the Shell's
+output and are never discovered at runtime.
+
+> **Why not just build `Shell.csproj` directly, or drop the project from the `.sln`?** Building the
+> Shell alone keeps unreferenced experimental projects out of the build graph (no empty DLL needed)
+> — but this demo standardizes on **solution** builds so everything builds uniformly. Removing the
+> project from the solution would also work, but it breaks IDE discoverability: you could no longer
+> browse or edit the extension code in Visual Studio.
+
+### 2. The Shell references extensions per flavor — `Extensions.props`
+
+`src/Shell/Extensions.props` is the single source of truth for which extensions exist and whether
+they are stable or experimental:
+
+```xml
+<ItemGroup>
+  <!-- <StableExtension Include="..." />  (none yet) -->
+  <ExperimentalExtension Include="HelloUserControl" />
+  <ExperimentalExtension Include="HelloPage" />
+</ItemGroup>
+```
+
+`Shell.csproj` imports it and turns those identities into `ProjectReference`s — stable ones always,
+experimental ones only when `IncludeExperimentalApis=true`. Each `Identity` maps to
+`src\Extensions\<Identity>\Ext.<Identity>.csproj`.
+
+### 3. Reflection-based navigation discovery
+
+Each extension's entry UI type is decorated with `[NavItem]` (defined in the SDK-neutral
+`WinUIModularDemo.Contracts` project):
+
+```csharp
+[NavItem("Hello", Icon = Symbol.Emoji, Order = 10)]
+public sealed partial class HelloView : UserControl { ... }
+
+[NavItem("Demo", Icon = Symbol.Document, Order = 20)]
+public sealed partial class DemoPage : Page { ... }
+```
+
+At startup `ModuleLoader.Discover()` loads any `Ext.*.dll` next to the Shell, scans every loaded
+assembly for `[NavItem]` types, and returns them ordered by `Order`. `MainWindow` adds one menu
+item per result. **The Shell contains no feature names** — add or remove a feature and the menu
+follows automatically.
+
+Two deliberate choices here: discovery is by **reflection** (not hardcoded XAML nav items), so the
+menu only ever shows features that were actually compiled — no dead entries that crash on click;
+and it keys off a **`[NavItem]` attribute** (not "scan every `Page`"), so a feature can carry a
+title, icon, and sort order, and only opted-in types appear (dialogs and sub-views stay out).
+
+### 4. Per-flavor build isolation
+
+The root `Directory.Build.props` sets `BaseOutputPath`/`BaseIntermediateOutputPath` to
+`bin\<flavor>\` / `obj\<flavor>\`. Every project therefore keeps its stable and experimental
+outputs apart, so switching flavors never needs a manual `dotnet clean` (this matters for WinUI's
+XAML-generated files, which would otherwise collide between flavors).
+
+## The two feature styles
+
+`[NavItem]` works on either WinUI hosting model, and the demo ships one of each so you can compare:
 
 | Project | Entry type | Base class | How the Shell hosts it |
 |---|---|---|---|
-| `Experimental.HelloUserControl` | `HelloView` | `UserControl` | `ContentControl.Content = new HelloView()` — no Page, no Frame |
-| `Experimental.HelloPage` | `DemoPage` | `Page` | `Frame.Navigate(typeof(DemoPage))` — gets `OnNavigatedTo` lifecycle |
+| `Ext.HelloUserControl` | `HelloView` | `UserControl` | `ContentControl.Content = new HelloView()` — no Frame |
+| `Ext.HelloPage` | `DemoPage` | `Page` | `Frame.Navigate(typeof(DemoPage))` — gets `OnNavigatedTo` lifecycle |
 
-Because `Page` derives from `UserControl`, a single generic `ContentControl` could host either —
-but the `Page` only receives navigation lifecycle events when a `Frame` drives it. The demo
-shows both paths side by side so you can see the difference.
+`Page` derives from `UserControl`, so a single `ContentControl` *could* host either — but only a
+`Page` driven by a `Frame` receives navigation lifecycle events. Pick `UserControl` for a
+self-contained view; pick `Page` when you need navigation parameters or a back stack.
 
-**Convention (no interface):**
-- each `Experimental.*` project exposes exactly **one public entry UI type**
-- that entry type is either a `UserControl` or a `Page`
-- helper controls in the same project should be `internal`
+### Hosting in other UI containers
 
-`View` is just a human-friendly naming convention. `UserControl` and `Page` are the real WinUI types.
+Discovery is independent of how you render each item — only the nav container changes:
 
-## Add your own feature
+| UI pattern | Render a discovered item as |
+|---|---|
+| **NavigationView** (this demo) | `NavigationViewItem { Content = Title, Icon = new SymbolIcon(Icon) }` |
+| **TabView** | `TabViewItem { Header = Title, IconSource = new SymbolIconSource { Symbol = Icon } }` |
+| **ListView + Frame** | `ListViewItem { Content = Title }` → on selection `Frame.Navigate(type)` |
 
-Use the scaffold — one command, no Shell edits:
+## Project layout
 
-```powershell
-.\new-feature.ps1 -Name Reports            # a UserControl feature
-.\new-feature.ps1 -Name Report -Kind Page  # a Page feature
-build.cmd experimental                      # it appears in the menu
+```
+WinUIModularDemo/
+  WinUIModularDemo.sln              Shell + Contracts + both extension projects
+  Directory.Build.props            IncludeExperimentalApis switch + per-flavor bin/obj
+  Directory.Packages.props         central package mgmt; stable vs experimental WinAppSDK version
+  build.cmd                        builds the solution per flavor
+  src/
+    Contracts/                     WinUIModularDemo.Contracts.csproj + NavItemAttribute.cs
+    Shell/                         Shell.csproj, Extensions.props, MainWindow, ModuleLoader
+    Extensions/
+      HelloUserControl/            Ext.HelloUserControl.csproj + HelloView.xaml(.cs)  [NavItem]
+      HelloPage/                   Ext.HelloPage.csproj        + DemoPage.xaml(.cs)   [NavItem]
 ```
 
-Or by hand:
+## Verify both flavors
 
-1. Create `src/Experimental/Experimental.MyThing/Experimental.MyThing.csproj`
-   (copy one of the existing `.csproj` files).
-2. Add exactly one **public** entry UI type: `MyThingView : UserControl` or `MyThingPage : Page`.
-3. Make any helper controls in the same project `internal`.
-4. `build.cmd experimental`. It appears in the menu automatically. No Shell edits.
+With per-flavor isolation you can run these back to back **without** a `dotnet clean`:
 
-See `CONTRIBUTING.md` for the full 60-second guide.
+```powershell
+dotnet build WinUIModularDemo.sln -c Debug -p:Platform=x64                                   # experimental (default)
+dotnet build WinUIModularDemo.sln -c Debug -p:Platform=x64 -p:IncludeExperimentalApis=false  # stable
+```
 
-## Note on the build toolchain
+| Check | Experimental | Stable |
+|---|---|---|
+| Build succeeds | ✅ | ✅ |
+| Extension DLLs contain code | ✅ | ❌ (empty) |
+| `Ext.*.dll` copied next to the Shell | ✅ | ❌ |
+| Feature nav items appear | ✅ (Home · Hello · Demo) | ❌ (Home only) |
 
-The features use normal WinUI **XAML** (`HelloView.xaml`, `DemoPage.xaml`). Building a WinUI
-class library that has XAML needs the MSIX/PRI MSBuild tasks that come with Visual Studio or
-"Build Tools for Visual Studio". `build.cmd` finds MSBuild automatically via `vswhere`.
+## Common pitfalls
 
-`dotnet build` works too **when** the installed .NET SDK carries those MSIX tasks. On an SDK
-that doesn't (seen with some .NET 10 previews), `dotnet build` fails on the library PRI step —
-use `build.cmd` (MSBuild) instead. Nothing about the *pattern* depends on this; it's purely
-which build tool you invoke.
+| Pitfall | Symptom | Fix |
+|---|---|---|
+| Shell references an experimental API directly | CS0234 in the stable build | Move that code into an extension project |
+| Contracts references SDK-specific types | Extension can't compile standalone | Keep Contracts SDK-neutral |
+| Forgot `EnableDefaultItems=false` in an experimental extension | Stable build fails on missing APIs | Add the conditional property |
+| Forgot to register in `Extensions.props` | Extension DLL isn't referenced/copied | Add it to `StableExtension` or `ExperimentalExtension` |
+| Assembly not named `Ext.*` | Feature never discovered at runtime | Match the `Ext.<Feature>` naming so `ModuleLoader` finds it |
+
+## Add or promote a feature
+
+### Add an experimental feature
+
+No scaffolding script, and no central registry beyond `Extensions.props` — a feature self-registers
+via one attribute.
+
+1. **Create** `src/Extensions/<Name>/Ext.<Name>.csproj` by copying an existing one (e.g.
+   `Ext.HelloUserControl.csproj`); rename `RootNamespace`/`AssemblyName` to `Ext.<Name>` and keep
+   the empty-DLL block:
+
+   ```xml
+   <EnableDefaultItems Condition="'$(IncludeExperimentalApis)' != 'true'">false</EnableDefaultItems>
+   <UseWinUI            Condition="'$(IncludeExperimentalApis)' == 'true'">true</UseWinUI>
+
+   <ItemGroup Condition="'$(IncludeExperimentalApis)' == 'true'">
+     <ProjectReference Include="..\..\Contracts\WinUIModularDemo.Contracts.csproj" />
+     <PackageReference Include="Microsoft.WindowsAppSDK" />
+   </ItemGroup>
+   ```
+
+2. **Add one `public` entry UI type** (a `UserControl` or a `Page`) decorated with `[NavItem]`; keep
+   any helpers `internal`:
+
+   ```csharp
+   using WinUIModularDemo;   // NavItemAttribute (Contracts project)
+   using Microsoft.UI.Xaml.Controls;
+
+   namespace Ext.MyThing;
+
+   [NavItem("My Thing", Icon = Symbol.Home, Order = 30)]
+   public sealed partial class MyThingView : UserControl { public MyThingView() => InitializeComponent(); }
+   ```
+
+3. **Register** it in `src/Shell/Extensions.props`: `<ExperimentalExtension Include="MyThing" />`.
+
+4. **Add to the solution and build:**
+
+   ```cmd
+   dotnet sln WinUIModularDemo.sln add src\Extensions\MyThing\Ext.MyThing.csproj
+   build.cmd experimental
+   ```
+
+It appears in the menu automatically — **you never touch the Shell's code.**
+
+### Promote a feature to stable
+
+No file moves, no namespace changes. In the feature's `.csproj`:
+
+1. Delete the `EnableDefaultItems` line.
+2. Set `<UseWinUI>true</UseWinUI>` unconditionally.
+3. Remove the `Condition` from the `<ItemGroup>` that pulls in Contracts + `Microsoft.WindowsAppSDK`.
+
+Then in `src/Shell/Extensions.props`, move its entry from `<ExperimentalExtension>` to
+`<StableExtension>`. It now builds and loads in **both** flavors.

@@ -12,21 +12,13 @@ public sealed partial class MainWindow : Window
         BuildMenu();
     }
 
-    // The Shell knows nothing about specific feature names.
-    // It always shows "Home", then asks ModuleLoader for any experimental DLLs that expose
-    // exactly one public entry UI type (Page or UserControl) and adds one menu item per DLL.
+    // A plain, single-project app: the menu is hard-coded and every page lives in this same
+    // Shell project. Adding a feature means editing this method and adding a page here.
     private void BuildMenu()
     {
-        Nav.MenuItems.Add(new NavigationViewItem { Content = "Home (core)", Tag = "home" });
-
-        var modules = ModuleLoader.Discover();
-        if (modules.Count > 0)
-        {
-            Nav.MenuItems.Add(new NavigationViewItemSeparator());
-            Nav.MenuItems.Add(new NavigationViewItemHeader { Content = "Experimental" });
-            foreach (var m in modules)
-                Nav.MenuItems.Add(new NavigationViewItem { Content = m.Title, Tag = m });
-        }
+        Nav.MenuItems.Add(new NavigationViewItem { Content = "Home", Tag = "home" });
+        Nav.MenuItems.Add(new NavigationViewItem { Content = "Hello", Tag = "hello" });
+        Nav.MenuItems.Add(new NavigationViewItem { Content = "Demo", Tag = "demo" });
 
         Nav.SelectedItem = Nav.MenuItems[0];
         ShowHome();
@@ -34,35 +26,27 @@ public sealed partial class MainWindow : Window
 
     private void OnItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
     {
-        switch (args.InvokedItemContainer?.Tag)
+        switch (args.InvokedItemContainer?.Tag as string)
         {
             case "home":
                 ShowHome();
                 break;
 
-            case FeatureModule m:
-                Show(m);
+            case "hello":
+                // A UserControl is just a reusable piece of UI. It does not need a Frame and
+                // does not get Page navigation lifecycle callbacks.
+                PageHost.Visibility = Visibility.Collapsed;
+                UserControlHost.Visibility = Visibility.Visible;
+                UserControlHost.Content = new HelloView();
                 break;
-        }
-    }
 
-    private void Show(FeatureModule m)
-    {
-        if (m.IsPage)
-        {
-            // A Page is navigation-aware. Hosting it in a Frame gives it OnNavigatedTo,
-            // navigation parameters, and back-stack behavior.
-            UserControlHost.Visibility = Visibility.Collapsed;
-            PageHost.Visibility = Visibility.Visible;
-            PageHost.Navigate(m.ViewType);
-        }
-        else
-        {
-            // A UserControl is just a reusable piece of UI. It does not need a Frame and
-            // does not get Page navigation lifecycle callbacks.
-            PageHost.Visibility = Visibility.Collapsed;
-            UserControlHost.Visibility = Visibility.Visible;
-            UserControlHost.Content = Activator.CreateInstance(m.ViewType);
+            case "demo":
+                // A Page is navigation-aware. Hosting it in a Frame gives it OnNavigatedTo,
+                // navigation parameters, and back-stack behavior.
+                UserControlHost.Visibility = Visibility.Collapsed;
+                PageHost.Visibility = Visibility.Visible;
+                PageHost.Navigate(typeof(DemoPage));
+                break;
         }
     }
 
@@ -75,13 +59,12 @@ public sealed partial class MainWindow : Window
             Spacing = 12,
             Children =
             {
-                new TextBlock { Text = "Core app", Style = (Style)Application.Current.Resources["TitleTextBlockStyle"] },
+                new TextBlock { Text = "Home", Style = (Style)Application.Current.Resources["TitleTextBlockStyle"] },
                 new TextBlock
                 {
                     TextWrapping = TextWrapping.Wrap,
-                    Text = "This is the always-present core. Build with `build` and you see only this. " +
-                           "Build with `build experimental` and the experimental features appear in the menu — " +
-                           "with zero changes to the Shell project."
+                    Text = "A plain WinUI app. Home, Hello and Demo are all defined in this one Shell " +
+                           "project and wired into the menu by hand."
                 }
             }
         };
