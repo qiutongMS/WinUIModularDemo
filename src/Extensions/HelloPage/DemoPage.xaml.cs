@@ -1,9 +1,13 @@
 using System;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
+using WinUIModularDemo;
 
-namespace Shell;
+namespace Ext.HelloPage;
 
+// Same self-registration as the UserControl feature - but this entry type is a Page, so the
+// Shell hosts it in a Frame and it receives navigation lifecycle callbacks (OnNavigatedTo).
+[NavItem("Demo", Icon = Symbol.Document, Order = 20)]
 public sealed partial class DemoPage : Page
 {
     public DemoPage()
