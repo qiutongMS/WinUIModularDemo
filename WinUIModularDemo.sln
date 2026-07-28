@@ -4,6 +4,12 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Shell", "src\Shell\Shell.csproj", "{A1111111-1111-1111-1111-111111111111}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WinUIModularDemo.Contracts", "src\Contracts\WinUIModularDemo.Contracts.csproj", "{B2222222-2222-2222-2222-222222222222}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ext.HelloUserControl", "src\Extensions\HelloUserControl\Ext.HelloUserControl.csproj", "{C3333333-3333-3333-3333-333333333333}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ext.HelloPage", "src\Extensions\HelloPage\Ext.HelloPage.csproj", "{D4444444-4444-4444-4444-444444444444}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -20,6 +26,30 @@ Global
 		{A1111111-1111-1111-1111-111111111111}.Release|x64.Build.0 = Release|x64
 		{A1111111-1111-1111-1111-111111111111}.Release|ARM64.ActiveCfg = Release|ARM64
 		{A1111111-1111-1111-1111-111111111111}.Release|ARM64.Build.0 = Release|ARM64
+		{B2222222-2222-2222-2222-222222222222}.Debug|x64.ActiveCfg = Debug|x64
+		{B2222222-2222-2222-2222-222222222222}.Debug|x64.Build.0 = Debug|x64
+		{B2222222-2222-2222-2222-222222222222}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{B2222222-2222-2222-2222-222222222222}.Debug|ARM64.Build.0 = Debug|ARM64
+		{B2222222-2222-2222-2222-222222222222}.Release|x64.ActiveCfg = Release|x64
+		{B2222222-2222-2222-2222-222222222222}.Release|x64.Build.0 = Release|x64
+		{B2222222-2222-2222-2222-222222222222}.Release|ARM64.ActiveCfg = Release|ARM64
+		{B2222222-2222-2222-2222-222222222222}.Release|ARM64.Build.0 = Release|ARM64
+		{C3333333-3333-3333-3333-333333333333}.Debug|x64.ActiveCfg = Debug|x64
+		{C3333333-3333-3333-3333-333333333333}.Debug|x64.Build.0 = Debug|x64
+		{C3333333-3333-3333-3333-333333333333}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{C3333333-3333-3333-3333-333333333333}.Debug|ARM64.Build.0 = Debug|ARM64
+		{C3333333-3333-3333-3333-333333333333}.Release|x64.ActiveCfg = Release|x64
+		{C3333333-3333-3333-3333-333333333333}.Release|x64.Build.0 = Release|x64
+		{C3333333-3333-3333-3333-333333333333}.Release|ARM64.ActiveCfg = Release|ARM64
+		{C3333333-3333-3333-3333-333333333333}.Release|ARM64.Build.0 = Release|ARM64
+		{D4444444-4444-4444-4444-444444444444}.Debug|x64.ActiveCfg = Debug|x64
+		{D4444444-4444-4444-4444-444444444444}.Debug|x64.Build.0 = Debug|x64
+		{D4444444-4444-4444-4444-444444444444}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{D4444444-4444-4444-4444-444444444444}.Debug|ARM64.Build.0 = Debug|ARM64
+		{D4444444-4444-4444-4444-444444444444}.Release|x64.ActiveCfg = Release|x64
+		{D4444444-4444-4444-4444-444444444444}.Release|x64.Build.0 = Release|x64
+		{D4444444-4444-4444-4444-444444444444}.Release|ARM64.ActiveCfg = Release|ARM64
+		{D4444444-4444-4444-4444-444444444444}.Release|ARM64.Build.0 = Release|ARM64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

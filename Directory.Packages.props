@@ -1,9 +1,18 @@
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!--
+      When IncludeExperimentalApis is true (default), every project builds against the experimental
+      Windows App SDK package and the experimental extension projects under src\Extensions\ ship with
+      real code. Pass /p:IncludeExperimentalApis=false to build against the latest stable Windows App
+      SDK; the experimental extensions then compile to empty assemblies (see their .csproj files) and
+      are never referenced or loaded by the Shell at runtime.
+    -->
+    <IncludeExperimentalApis Condition="'$(IncludeExperimentalApis)' == ''">true</IncludeExperimentalApis>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageVersion Include="Microsoft.WindowsAppSDK" Version="2.1.4-experimental8" />
+    <PackageVersion Condition="'$(IncludeExperimentalApis)' == 'true'" Include="Microsoft.WindowsAppSDK" Version="2.1.4-experimental8" />
+    <PackageVersion Condition="'$(IncludeExperimentalApis)' != 'true'" Include="Microsoft.WindowsAppSDK" Version="2.1.3" />
   </ItemGroup>
 </Project>
