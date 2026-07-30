@@ -1,5 +1,6 @@
 using System;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 
 namespace Shell;
@@ -13,11 +14,16 @@ public sealed partial class MainWindow : Window
     }
 
     // The Shell knows nothing about specific feature names.
-    // It always shows "Home", then asks ModuleLoader for any experimental DLLs that expose
-    // exactly one public entry UI type (Page or UserControl) and adds one menu item per DLL.
+    // It always shows "Home", then asks ModuleLoader for extension entry UI types.
     private void BuildMenu()
     {
-        Nav.MenuItems.Add(new NavigationViewItem { Content = "Home (core)", Tag = "home" });
+        var homeItem = new NavigationViewItem
+        {
+            Content = "Home (core)",
+            Tag = "home",
+        };
+        AutomationProperties.SetAutomationId(homeItem, "Navigation_Home");
+        Nav.MenuItems.Add(homeItem);
 
         var modules = ModuleLoader.Discover();
         if (modules.Count > 0)
@@ -25,12 +31,16 @@ public sealed partial class MainWindow : Window
             Nav.MenuItems.Add(new NavigationViewItemSeparator());
             Nav.MenuItems.Add(new NavigationViewItemHeader { Content = "Features" });
             foreach (var m in modules)
-                Nav.MenuItems.Add(new NavigationViewItem
+            {
+                var item = new NavigationViewItem
                 {
                     Content = m.Title,
                     Icon = new SymbolIcon(m.Icon),
                     Tag = m,
-                });
+                };
+                AutomationProperties.SetAutomationId(item, $"Navigation_{m.ViewType.FullName}");
+                Nav.MenuItems.Add(item);
+            }
         }
 
         Nav.SelectedItem = Nav.MenuItems[0];
@@ -84,9 +94,8 @@ public sealed partial class MainWindow : Window
                 new TextBlock
                 {
                     TextWrapping = TextWrapping.Wrap,
-                    Text = "This is the always-present core. Build with `build` and you see only this. " +
-                           "Build with `build experimental` and the experimental features appear in the menu — " +
-                           "with zero changes to the Shell project."
+                    Text = "This is the always-present core. Experimental features appear automatically " +
+                           "when Versions.props selects a Windows App SDK -e prerelease."
                 }
             }
         };

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -18,24 +19,21 @@ public sealed record FeatureModule(string Title, Symbol Icon, int Order, Type Vi
 /// - each extension project exposes a PUBLIC entry UI type decorated with [NavItem]
 /// - that entry type is either a Page or a UserControl
 ///
-/// We first load any Ext.*.dll sitting next to the Shell (features the Shell referenced are
-/// already loaded; this also tolerates ones dropped in later), then scan every loaded assembly
-/// for [NavItem] types. In the stable flavor the experimental extensions are empty DLLs that the
-/// Shell never referenced, so none are copied to the output and nothing is discovered.
+/// We first load any Ext.*.dll sitting next to the Shell, then scan those extension assemblies for
+/// [NavItem] types. With a stable Windows App SDK the Shell does not reference experimental
+/// extension projects, so they never enter the build graph or appear in the output.
 /// </summary>
 public static class ModuleLoader
 {
     public static IReadOnlyList<FeatureModule> Discover()
     {
-        LoadExtensionAssemblies();
-
-        return AppDomain.CurrentDomain.GetAssemblies()
+        return LoadExtensionAssemblies()
             .SelectMany(SafeGetTypes)
             .Select(t => (Type: t, Attr: t.GetCustomAttribute<NavItemAttribute>()))
             .Where(x => x.Attr is not null && IsEntryUiType(x.Type))
             .Select(x => new FeatureModule(
                 x.Attr!.Title,
-                x.Attr.Icon,
+                ToSymbol(x.Attr.Icon),
                 x.Attr.Order,
                 x.Type,
                 typeof(Page).IsAssignableFrom(x.Type)))
@@ -44,14 +42,15 @@ public static class ModuleLoader
             .ToList();
     }
 
-    private static void LoadExtensionAssemblies()
+    private static IReadOnlyList<Assembly> LoadExtensionAssemblies()
     {
         var baseDir = AppContext.BaseDirectory;
-        var alreadyLoaded = new HashSet<string>(
-            AppDomain.CurrentDomain.GetAssemblies()
-                .Select(a => a.GetName().Name)
-                .Where(n => !string.IsNullOrEmpty(n))!,
-            StringComparer.OrdinalIgnoreCase);
+        var extensions = AppDomain.CurrentDomain.GetAssemblies()
+            .Where(IsExtensionAssembly)
+            .ToList();
+        var alreadyLoaded = extensions
+            .Select(a => a.GetName().Name!)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         foreach (var dll in Directory.GetFiles(baseDir, "Ext.*.dll"))
         {
@@ -60,9 +59,22 @@ public static class ModuleLoader
             {
                 continue;
             }
-            try { Assembly.LoadFrom(dll); }
-            catch { /* unloadable / not one of ours -> skip; the app keeps running */ }
+
+            try
+            {
+                extensions.Add(Assembly.LoadFrom(dll));
+            }
+            catch (BadImageFormatException ex)
+            {
+                Debug.WriteLine($"[ModuleLoader] Ignoring '{dll}': {ex.Message}");
+            }
+            catch (FileLoadException ex)
+            {
+                Debug.WriteLine($"[ModuleLoader] Could not load '{dll}': {ex.Message}");
+            }
         }
+
+        return extensions;
     }
 
     private static bool IsEntryUiType(Type? t)
@@ -71,12 +83,34 @@ public static class ModuleLoader
         {
             return false;
         }
-        return typeof(Page).IsAssignableFrom(t) || typeof(UserControl).IsAssignableFrom(t);
+        return (typeof(Page).IsAssignableFrom(t) || typeof(UserControl).IsAssignableFrom(t))
+            && t.GetConstructor(Type.EmptyTypes) is not null;
     }
 
     private static IEnumerable<Type> SafeGetTypes(Assembly assembly)
     {
         try { return assembly.GetTypes(); }
-        catch (ReflectionTypeLoadException ex) { return ex.Types.Where(t => t is not null)!; }
+        catch (ReflectionTypeLoadException ex)
+        {
+            foreach (var loaderException in ex.LoaderExceptions)
+            {
+                Debug.WriteLine($"[ModuleLoader] Type load failure in '{assembly.FullName}': {loaderException?.Message}");
+            }
+            return ex.Types.Where(t => t is not null)!;
+        }
+    }
+
+    private static bool IsExtensionAssembly(Assembly assembly)
+    {
+        return assembly.GetName().Name?.StartsWith("Ext.", StringComparison.OrdinalIgnoreCase) == true;
+    }
+
+    private static Symbol ToSymbol(NavIcon icon)
+    {
+        return icon switch
+        {
+            NavIcon.Emoji => Symbol.Emoji,
+            _ => Symbol.Document,
+        };
     }
 }

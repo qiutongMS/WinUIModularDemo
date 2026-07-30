@@ -37,10 +37,9 @@
     <ProjectReference Include="@(StableExtension -> '..\Extensions\%(Identity)\Ext.%(Identity).csproj')" />
   </ItemGroup>
 
-  <!-- Experimental extensions: referenced only when IncludeExperimentalApis=true. When the flag is
-       off they still build (as empty DLLs, via the solution) but the Shell does not reference them,
-       so their assemblies are not copied to the output and are never discovered at runtime. -->
-  <ItemGroup Condition="'$(IncludeExperimentalApis)' == 'true'">
+  <!-- A Windows App SDK prerelease beginning with "-e" automatically adds experimental
+       extensions to the build graph. Stable SDK versions never evaluate these projects. -->
+  <ItemGroup Condition="'$(IsExperimentalWindowsAppSDK)' == 'true'">
     <ProjectReference Include="@(ExperimentalExtension -> '..\Extensions\%(Identity)\Ext.%(Identity).csproj')" />
   </ItemGroup>
 

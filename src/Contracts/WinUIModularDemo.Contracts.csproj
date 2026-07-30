@@ -1,23 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0-windows10.0.22621.0</TargetFramework>
-    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <TargetFramework>net8.0</TargetFramework>
     <RootNamespace>WinUIModularDemo</RootNamespace>
     <AssemblyName>WinUIModularDemo.Contracts</AssemblyName>
-    <UseWinUI>true</UseWinUI>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <Platforms>x64;ARM64</Platforms>
   </PropertyGroup>
-
-  <!--
-    SDK-neutral shared contract assembly. It carries only types that exist in BOTH the stable and
-    experimental Windows App SDK (here, just the NavItem attribute). Both the Shell and every
-    extension reference it, so it must compile cleanly against either flavor.
-  -->
-  <ItemGroup>
-    <PackageReference Include="Microsoft.WindowsAppSDK" />
-  </ItemGroup>
 
 </Project>

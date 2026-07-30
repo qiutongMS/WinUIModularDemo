@@ -6,6 +6,7 @@
 
     <NavigationView
         x:Name="Nav"
+        AutomationProperties.AutomationId="MainNavigation"
         IsBackButtonVisible="Collapsed"
         IsSettingsVisible="False"
         PaneDisplayMode="Left"

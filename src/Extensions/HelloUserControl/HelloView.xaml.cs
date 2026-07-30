@@ -7,7 +7,7 @@ namespace Ext.HelloUserControl;
 
 // The [NavItem] attribute is how this feature self-registers in the Shell's menu. The Shell
 // discovers it by reflection - it has no compile-time reference to this project.
-[NavItem("Hello", Icon = Symbol.Emoji, Order = 10)]
+[NavItem("Hello", Icon = NavIcon.Emoji, Order = 10)]
 public sealed partial class HelloView : UserControl
 {
     private int _count;

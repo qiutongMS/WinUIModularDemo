@@ -6,10 +6,13 @@
 
     <StackPanel Spacing="12">
         <TextBlock Text="Hello from a UserControl feature (XAML)"
-                   Style="{ThemeResource TitleTextBlockStyle}" />
+                   Style="{StaticResource TitleTextBlockStyle}" />
         <TextBlock TextWrapping="Wrap"
                    Text="I am a UserControl defined in XAML. The Shell hosted me by setting ContentControl.Content = new HelloView(). No Page, no Frame." />
-        <Button Content="Click me" Click="OnClick" />
-        <TextBlock x:Name="Status" Foreground="{ThemeResource SystemAccentColor}" />
+        <Button
+            AutomationProperties.AutomationId="HelloView_ClickButton"
+            Content="Click me"
+            Click="OnClick" />
+        <TextBlock x:Name="Status" />
     </StackPanel>
 </UserControl>

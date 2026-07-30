@@ -10,7 +10,7 @@
   <ItemGroup>
     <!-- Stable extensions: built and loaded in both flavors. (none yet) -->
 
-    <!-- Experimental extensions: built and loaded only when IncludeExperimentalApis=true. -->
+    <!-- Experimental extensions: built and loaded only for a Windows App SDK "-e..." version. -->
     <ExperimentalExtension Include="HelloUserControl" />
     <ExperimentalExtension Include="HelloPage" />
   </ItemGroup>

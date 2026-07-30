@@ -7,7 +7,7 @@ namespace Ext.HelloPage;
 
 // Same self-registration as the UserControl feature - but this entry type is a Page, so the
 // Shell hosts it in a Frame and it receives navigation lifecycle callbacks (OnNavigatedTo).
-[NavItem("Demo", Icon = Symbol.Document, Order = 20)]
+[NavItem("Demo", Icon = NavIcon.Document, Order = 20)]
 public sealed partial class DemoPage : Page
 {
     public DemoPage()
