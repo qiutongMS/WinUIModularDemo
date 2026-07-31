@@ -1,8 +1,7 @@
 <Project>
-  <Import Project="Versions.props" Condition="'$(WindowsAppSDKVersion)' == ''" />
-
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <WindowsAppSDKVersion Condition="'$(WindowsAppSDKVersion)' == ''">2.1.4-experimental8</WindowsAppSDKVersion>
   </PropertyGroup>
 
   <ItemGroup>

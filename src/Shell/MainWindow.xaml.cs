@@ -95,7 +95,7 @@ public sealed partial class MainWindow : Window
                 {
                     TextWrapping = TextWrapping.Wrap,
                     Text = "This is the always-present core. Experimental features appear automatically " +
-                           "when Versions.props selects a Windows App SDK -e prerelease."
+                           "when Directory.Packages.props selects a Windows App SDK -exp prerelease."
                 }
             }
         };

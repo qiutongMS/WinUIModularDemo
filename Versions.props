@@ -1,5 +1,0 @@
-<Project>
-  <PropertyGroup>
-    <WindowsAppSDKVersion Condition="'$(WindowsAppSDKVersion)' == ''">2.1.4-experimental8</WindowsAppSDKVersion>
-  </PropertyGroup>
-</Project>

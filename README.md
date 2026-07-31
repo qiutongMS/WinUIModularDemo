@@ -6,7 +6,7 @@ This minimal WinUI 3 app demonstrates how a Shell can build and discover optiona
 The centrally managed `Microsoft.WindowsAppSDK` version is the only input:
 
 - a stable version such as `2.1.3` builds the core Shell only;
-- a prerelease whose suffix starts with `-e`, such as `2.1.4-exp1` or
+- a prerelease whose suffix starts with `-exp`, such as `2.1.4-exp1` or
   `2.1.4-experimental8`, also builds the experimental extensions.
 
 No `IncludeExperimentalApis` property, conditional compilation symbol, empty extension assembly,
@@ -14,7 +14,7 @@ or special build command is required.
 
 ## Build
 
-Choose the SDK version in `Versions.props`:
+Choose the SDK version in `Directory.Packages.props`:
 
 ```xml
 <WindowsAppSDKVersion>2.1.4-experimental8</WindowsAppSDKVersion>
@@ -37,43 +37,23 @@ msbuild -restore -p:Configuration=Debug -p:Platform=x64
 The Shell is unpackaged and self-contained. After a Debug x64 build, run:
 
 ```powershell
-src\Shell\bin\x64\experimental\Debug\net8.0-windows10.0.22621.0\Shell.exe
+src\Shell\bin\x64\2.1.4-experimental8\Debug\net8.0-windows10.0.22621.0\Shell.exe
 ```
 
 ## How version-driven inclusion works
 
-`Versions.props` contains the single version value:
+`Directory.Packages.props` contains the single version value and uses it for central package
+management:
 
 ```xml
 <PropertyGroup>
   <WindowsAppSDKVersion>2.1.4-experimental8</WindowsAppSDKVersion>
 </PropertyGroup>
-```
-
-`Directory.Build.props` derives the extension mode from that value:
-
-```xml
-<PropertyGroup>
-  <IsExperimentalWindowsAppSDK>
-    $([System.Text.RegularExpressions.Regex]::IsMatch(
-      '$(WindowsAppSDKVersion)',
-      '(?i)^[0-9]+(?:\.[0-9]+)*-e'))
-  </IsExperimentalWindowsAppSDK>
-</PropertyGroup>
-```
-
-`Directory.Packages.props` uses the same value for central package management:
-
-```xml
 <ItemGroup>
   <PackageVersion Include="Microsoft.WindowsAppSDK"
                   Version="$(WindowsAppSDKVersion)" />
 </ItemGroup>
 ```
-
-The property is not a second switch. It is derived on every build and should not be set manually.
-The regular expression accepts any numeric Windows App SDK version whose prerelease label starts
-with `e`.
 
 `Shell.csproj` imports `Extensions.props`, which classifies extensions by maturity, and creates
 project references only when the selected SDK can compile them:
@@ -90,11 +70,14 @@ project references only when the selected SDK can compile them:
     Include="@(StableExtension -> '..\Extensions\%(Identity)\Ext.%(Identity).csproj')" />
 </ItemGroup>
 
-<ItemGroup Condition="'$(IsExperimentalWindowsAppSDK)' == 'true'">
+<ItemGroup Condition="$([System.String]::Copy('$(WindowsAppSDKVersion)').Contains('-exp'))">
   <ProjectReference
     Include="@(ExperimentalExtension -> '..\Extensions\%(Identity)\Ext.%(Identity).csproj')" />
 </ItemGroup>
 ```
+
+The same project keeps the Shell output and WinUI XAML saved state version-specific. This prevents
+stale experimental assemblies or generated type metadata when the package version changes.
 
 The extension projects are intentionally not top-level entries in `WinUIModularDemo.sln`.
 Otherwise a solution build would invoke them regardless of the conditional references in the
@@ -156,7 +139,6 @@ To promote an extension to stable, move its item from `ExperimentalExtension` to
 WinUIModularDemo/
   Directory.Build.props
   Directory.Packages.props
-  Versions.props
   WinUIModularDemo.sln
   build.cmd
   src/

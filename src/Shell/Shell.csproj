@@ -21,6 +21,8 @@
     <LangVersion>latest</LangVersion>
     <Platforms>x64;ARM64</Platforms>
     <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
+    <BaseOutputPath>bin\$(BuildPlatform)\$(WindowsAppSDKVersion)\</BaseOutputPath>
+    <XamlSavedStateFileName>XamlSaveStateFile.$(WindowsAppSDKVersion).xml</XamlSavedStateFileName>
     <EnableMsixTooling>true</EnableMsixTooling>
     <!-- Unpackaged, self-contained: simplest to build and run from the CLI. -->
     <WindowsPackageType>None</WindowsPackageType>
@@ -37,9 +39,9 @@
     <ProjectReference Include="@(StableExtension -> '..\Extensions\%(Identity)\Ext.%(Identity).csproj')" />
   </ItemGroup>
 
-  <!-- A Windows App SDK prerelease beginning with "-e" automatically adds experimental
+  <!-- A Windows App SDK prerelease beginning with "-exp" automatically adds experimental
        extensions to the build graph. Stable SDK versions never evaluate these projects. -->
-  <ItemGroup Condition="'$(IsExperimentalWindowsAppSDK)' == 'true'">
+  <ItemGroup Condition="$([System.String]::Copy('$(WindowsAppSDKVersion)').Contains('-exp'))">
     <ProjectReference Include="@(ExperimentalExtension -> '..\Extensions\%(Identity)\Ext.%(Identity).csproj')" />
   </ItemGroup>
 

@@ -1,16 +1,10 @@
 <Project>
-  <Import Project="Versions.props" />
-
   <PropertyGroup>
-    <IsExperimentalWindowsAppSDK>$([System.Text.RegularExpressions.Regex]::IsMatch('$(WindowsAppSDKVersion)', '(?i)^[0-9]+(?:\.[0-9]+)*-e'))</IsExperimentalWindowsAppSDK>
-    <BuildFlavor Condition="'$(IsExperimentalWindowsAppSDK)' == 'true'">experimental</BuildFlavor>
-    <BuildFlavor Condition="'$(IsExperimentalWindowsAppSDK)' != 'true'">stable</BuildFlavor>
-
     <BuildPlatform>$(Platform)</BuildPlatform>
     <BuildPlatform Condition="'$(BuildPlatform)' == '' or '$(BuildPlatform)' == 'AnyCPU' or '$(BuildPlatform)' == 'Any CPU'">x64</BuildPlatform>
     <PlatformTarget Condition="'$(PlatformTarget)' == ''">$(BuildPlatform)</PlatformTarget>
-    <BaseOutputPath>bin\$(BuildPlatform)\$(BuildFlavor)\</BaseOutputPath>
-    <BaseIntermediateOutputPath>obj\$(BuildPlatform)\$(BuildFlavor)\</BaseIntermediateOutputPath>
+    <BaseOutputPath>bin\$(BuildPlatform)\</BaseOutputPath>
+    <BaseIntermediateOutputPath>obj\$(BuildPlatform)\</BaseIntermediateOutputPath>
     <AppendPlatformToOutputPath>false</AppendPlatformToOutputPath>
     <DefaultItemExcludes>$(DefaultItemExcludes);bin\**;obj\**</DefaultItemExcludes>
   </PropertyGroup>
