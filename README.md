@@ -37,7 +37,7 @@ msbuild -restore -p:Configuration=Debug -p:Platform=x64
 The Shell is unpackaged and self-contained. After a Debug x64 build, run:
 
 ```powershell
-src\Shell\bin\x64\2.1.4-experimental8\Debug\net8.0-windows10.0.22621.0\Shell.exe
+src\Shell\bin\x64\Debug\net8.0-windows10.0.22621.0\Shell.exe
 ```
 
 ## How version-driven inclusion works
@@ -76,8 +76,9 @@ project references only when the selected SDK can compile them:
 </ItemGroup>
 ```
 
-The same project keeps the Shell output and WinUI XAML saved state version-specific. This prevents
-stale experimental assemblies or generated type metadata when the package version changes.
+After changing between stable and experimental SDK versions in an existing checkout, run
+`dotnet clean` once before rebuilding so generated XAML metadata and copied extension DLLs do not
+carry over from the previous build graph.
 
 The extension projects are intentionally not top-level entries in `WinUIModularDemo.sln`.
 Otherwise a solution build would invoke them regardless of the conditional references in the
