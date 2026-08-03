@@ -55,8 +55,8 @@ management:
 </ItemGroup>
 ```
 
-`Shell.csproj` imports `Extensions.props`, which classifies extensions by maturity, and creates
-project references only when the selected SDK can compile them:
+`Shell.csproj` imports `Extensions.props`, which classifies extensions by maturity. Experimental
+extensions are included when the SDK version contains `-exp`, or when CI explicitly forces them:
 
 ```xml
 <ItemGroup>
@@ -70,11 +70,20 @@ project references only when the selected SDK can compile them:
     Include="@(StableExtension -> '..\Extensions\%(Identity)\Ext.%(Identity).csproj')" />
 </ItemGroup>
 
-<ItemGroup Condition="$([System.String]::Copy('$(WindowsAppSDKVersion)').Contains('-exp'))">
+<ItemGroup Condition="$([System.String]::Copy('$(WindowsAppSDKVersion)').Contains('-exp')) Or '$(BuildExperimentalExtensions)' == 'true'">
   <ProjectReference
     Include="@(ExperimentalExtension -> '..\Extensions\%(Identity)\Ext.%(Identity).csproj')" />
 </ItemGroup>
 ```
+
+CI can explicitly force the experimental build graph:
+
+```powershell
+dotnet build -p:BuildExperimentalExtensions=true
+```
+
+When forcing `true`, CI must also select a `WindowsAppSDKVersion` that provides every API used by
+the experimental extensions.
 
 After changing between stable and experimental SDK versions in an existing checkout, run
 `dotnet clean` once before rebuilding so generated XAML metadata and copied extension DLLs do not

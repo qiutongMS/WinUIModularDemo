@@ -37,9 +37,8 @@
     <ProjectReference Include="@(StableExtension -> '..\Extensions\%(Identity)\Ext.%(Identity).csproj')" />
   </ItemGroup>
 
-  <!-- A Windows App SDK prerelease beginning with "-exp" automatically adds experimental
-       extensions to the build graph. Stable SDK versions never evaluate these projects. -->
-  <ItemGroup Condition="$([System.String]::Copy('$(WindowsAppSDKVersion)').Contains('-exp'))">
+  <!-- CI can force these into the build graph even when the SDK version has no "-exp" suffix. -->
+  <ItemGroup Condition="$([System.String]::Copy('$(WindowsAppSDKVersion)').Contains('-exp')) Or '$(BuildExperimentalExtensions)' == 'true'">
     <ProjectReference Include="@(ExperimentalExtension -> '..\Extensions\%(Identity)\Ext.%(Identity).csproj')" />
   </ItemGroup>
 
