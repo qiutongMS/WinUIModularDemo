@@ -1,170 +1,153 @@
-# WinUI modular extensions selected by the SDK version
+# WinUI extensions selected by the SDK version
 
-This minimal WinUI 3 app demonstrates how a Shell can build and discover optional `Page` and
-`UserControl` extensions without a separate feature flag.
+This sample demonstrates a WinUI 3 Shell that conditionally builds and discovers extension
+projects containing either a `Page` or a `UserControl`.
 
-The centrally managed `Microsoft.WindowsAppSDK` version is the only input:
-
-- a stable version such as `2.1.3` builds the core Shell only;
-- a prerelease whose suffix starts with `-exp`, such as `2.1.4-exp1` or
-  `2.1.4-experimental8`, also builds the experimental extensions.
-
-No `IncludeExperimentalApis` property, conditional compilation symbol, empty extension assembly,
-or special build command is required.
+The sample project is self-contained under `src\WinUIExtensionDemo`, matching the folder shape
+needed to move it into
+[WindowsAppSDK-Samples](https://github.com/microsoft/WindowsAppSDK-Samples) later. Root-level
+`README.md` and `build.cmd` remain outside the sample project.
 
 ## Build
 
-Choose the SDK version in `Directory.Packages.props`:
+Choose the Windows App SDK version in
+`src\WinUIExtensionDemo\Directory.Packages.props`:
 
 ```xml
 <WindowsAppSDKVersion>2.1.4-experimental8</WindowsAppSDKVersion>
 ```
 
-Then build normally:
+Then build from the repository root:
 
 ```powershell
-dotnet build
+dotnet build src\WinUIExtensionDemo\WinUIModularDemo.sln
 ```
 
 or:
 
 ```powershell
-msbuild -restore -p:Configuration=Debug -p:Platform=x64
+build.cmd
 ```
 
-`build.cmd` is a convenience wrapper around the same `dotnet build` operation.
+The unpackaged, self-contained Shell is written to:
 
-The Shell is unpackaged and self-contained. After a Debug x64 build, run:
-
-```powershell
-src\Shell\bin\x64\Debug\net8.0-windows10.0.22621.0\Shell.exe
+```text
+src\WinUIExtensionDemo\Shell\bin\x64\Debug\net8.0-windows10.0.22621.0\Shell.exe
 ```
 
-## How version-driven inclusion works
+## Select experimental extensions
 
-`Directory.Packages.props` contains the single version value and uses it for central package
-management:
+`Shell.csproj` includes experimental extension projects when the selected SDK version contains
+`-exp`:
 
 ```xml
-<PropertyGroup>
-  <WindowsAppSDKVersion>2.1.4-experimental8</WindowsAppSDKVersion>
-</PropertyGroup>
-<ItemGroup>
-  <PackageVersion Include="Microsoft.WindowsAppSDK"
-                  Version="$(WindowsAppSDKVersion)" />
-</ItemGroup>
-```
-
-`Shell.csproj` imports `Extensions.props`, which classifies extensions by maturity. Experimental
-extensions are included when the SDK version contains `-exp`, or when CI explicitly forces them:
-
-```xml
-<ItemGroup>
-  <StableExtension Include="SomeStableFeature" />
-  <ExperimentalExtension Include="HelloUserControl" />
-  <ExperimentalExtension Include="HelloPage" />
-</ItemGroup>
-
-<ItemGroup>
-  <ProjectReference
-    Include="@(StableExtension -> '..\Extensions\%(Identity)\Ext.%(Identity).csproj')" />
-</ItemGroup>
-
-<ItemGroup Condition="$([System.String]::Copy('$(WindowsAppSDKVersion)').Contains('-exp')) Or '$(BuildExperimentalExtensions)' == 'true'">
+<ItemGroup
+  Condition="$([System.String]::Copy('$(WindowsAppSDKVersion)').Contains('-exp')) Or
+             '$(BuildExperimentalExtensions)' == 'true'">
   <ProjectReference
     Include="@(ExperimentalExtension -> '..\Extensions\%(Identity)\Ext.%(Identity).csproj')" />
 </ItemGroup>
 ```
 
-CI can explicitly force the experimental build graph:
+CI can explicitly force that build graph:
 
 ```powershell
-dotnet build -p:BuildExperimentalExtensions=true
+dotnet build src\WinUIExtensionDemo\WinUIModularDemo.sln `
+  -p:BuildExperimentalExtensions=true
 ```
 
-When forcing `true`, CI must also select a `WindowsAppSDKVersion` that provides every API used by
-the experimental extensions.
+When forcing it, CI must also select a `WindowsAppSDKVersion` that provides every API used by the
+experimental extensions.
+
+The extension list lives in `Shell\Extensions.props`:
+
+```xml
+<ItemGroup>
+  <!-- StableExtension entries are always referenced. -->
+  <ExperimentalExtension Include="HelloUserControl" />
+  <ExperimentalExtension Include="HelloPage" />
+</ItemGroup>
+```
+
+The extension projects are intentionally not top-level solution entries. They enter the MSBuild
+graph only through the conditional `ProjectReference` items in the Shell.
 
 After changing between stable and experimental SDK versions in an existing checkout, run
-`dotnet clean` once before rebuilding so generated XAML metadata and copied extension DLLs do not
-carry over from the previous build graph.
+`dotnet clean src\WinUIExtensionDemo\WinUIModularDemo.sln` once before rebuilding. This removes
+generated XAML metadata and copied extension files from the previous graph.
 
-The extension projects are intentionally not top-level entries in `WinUIModularDemo.sln`.
-Otherwise a solution build would invoke them regardless of the conditional references in the
-Shell. They enter the MSBuild graph only when the Shell references them:
+## Convention-based discovery
 
-| Selected Windows App SDK | Shell | Contracts | Experimental `Ext.*` projects |
-|---|---:|---:|---:|
-| `2.1.3` | built | built | not evaluated or built |
-| `2.1.4-exp1` | built | built | built and copied beside the Shell |
+No shared contract or registration attribute is required. At startup, `ModuleLoader` loads
+`Ext.*.dll` files beside the Shell and treats every public, concrete `Page` or `UserControl` with
+a parameterless constructor as an entry type.
 
-## Runtime discovery
+Entry titles are derived by removing the `Page` or `View` suffix:
 
-Each extension exposes a public entry type decorated with the shared `[NavItem]` attribute:
+| Extension type | Navigation title | Host |
+|---|---|---|
+| `Ext.HelloPage.DemoPage` | Demo | `Frame.Navigate(Type)` |
+| `Ext.HelloUserControl.HelloView` | Hello | `ContentControl.Content` |
 
-```csharp
-[NavItem("Hello", Icon = NavIcon.Emoji, Order = 10)]
-public sealed partial class HelloView : UserControl
-{
-}
+Keep helper `Page` and `UserControl` types `internal` so they are not discovered as entries.
 
-[NavItem("Demo", Icon = NavIcon.Document, Order = 20)]
-public sealed partial class DemoPage : Page
-{
-}
+## Extension resources
+
+`Ext.HelloUserControl` demonstrates an extension-owned resource dictionary:
+
+```xml
+<ResourceDictionary Source="ExtensionResources.xaml" />
 ```
 
-At startup, `ModuleLoader` loads `Ext.*.dll` files from the application directory and finds
-decorated `Page` and `UserControl` types. `MainWindow` creates navigation items from the discovered
-metadata, so it contains no feature-specific type references.
+`ExtensionResources.xaml` defines `ExtensionStatusTextStyle`, and `HelloView.xaml` consumes it with
+`{StaticResource ExtensionStatusTextStyle}`. Building the extension produces its own `.pri`
+containing the compiled XAML resources. The project reference copies the extension DLL and PRI
+beside the Shell, and the relative dictionary URI resolves within the extension when `HelloView`
+is created.
 
-This is build-time modularity, not an untrusted plug-in sandbox. Only deploy extension assemblies
-that are produced and trusted with the application.
+The experimental Shell output therefore contains:
 
-## `Page` versus `UserControl`
+```text
+Ext.HelloUserControl.dll
+Ext.HelloUserControl.pri
+```
 
-| Entry type | Host | Use it when |
-|---|---|---|
-| `UserControl` | `ContentControl.Content` | The feature is a self-contained reusable view |
-| `Page` | `Frame.Navigate(Type)` | The feature needs navigation parameters, lifecycle, or back stack |
-
-The same discovery contract supports both styles. Only the hosting behavior differs.
+The extension PRI indexes `ExtensionResources.xbf` and `HelloView.xbf` under the
+`Ext.HelloUserControl` resource map.
 
 ## Add an experimental extension
 
-1. Create `src\Extensions\<Name>\Ext.<Name>.csproj`, following either existing extension project.
-2. Add a public `Page` or `UserControl` decorated with `[NavItem]`.
-3. Add `<ExperimentalExtension Include="<Name>" />` to `src\Shell\Extensions.props`.
-4. Run `dotnet build`.
-
-Do not add the project as a top-level project in the solution. The conditional `ProjectReference`
-is what keeps it out of stable builds.
+1. Create `src\WinUIExtensionDemo\Extensions\<Name>\Ext.<Name>.csproj`.
+2. Add one public entry `Page` or `UserControl`; keep helper UI types internal.
+3. Add `<ExperimentalExtension Include="<Name>" />` to
+   `src\WinUIExtensionDemo\Shell\Extensions.props`.
+4. Run `build.cmd`.
 
 To promote an extension to stable, move its item from `ExperimentalExtension` to
-`StableExtension`. No source or project-file condition needs to change.
+`StableExtension`.
 
 ## Project layout
 
 ```text
 WinUIModularDemo/
-  Directory.Build.props
-  Directory.Packages.props
-  WinUIModularDemo.sln
+  README.md
   build.cmd
   src/
-    Contracts/
-      NavItemAttribute.cs
-      WinUIModularDemo.Contracts.csproj
-    Shell/
-      Extensions.props
-      MainWindow.xaml
-      ModuleLoader.cs
-      Shell.csproj
-    Extensions/
-      HelloPage/
-        DemoPage.xaml
-        Ext.HelloPage.csproj
-      HelloUserControl/
-        HelloView.xaml
-        Ext.HelloUserControl.csproj
+    WinUIExtensionDemo/
+      Directory.Build.props
+      Directory.Packages.props
+      WinUIModularDemo.sln
+      Shell/
+        Extensions.props
+        MainWindow.xaml
+        ModuleLoader.cs
+        Shell.csproj
+      Extensions/
+        HelloPage/
+          DemoPage.xaml
+          Ext.HelloPage.csproj
+        HelloUserControl/
+          ExtensionResources.xaml
+          HelloView.xaml
+          Ext.HelloUserControl.csproj
 ```

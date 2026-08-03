@@ -5,23 +5,21 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using Microsoft.UI.Xaml.Controls;
-using WinUIModularDemo;
 
 namespace Shell;
 
-/// <summary>Metadata for one discovered feature (from its [NavItem] attribute).</summary>
-public sealed record FeatureModule(string Title, Symbol Icon, int Order, Type ViewType, bool IsPage);
+/// <summary>Metadata for one discovered extension entry type.</summary>
+public sealed record FeatureModule(string Title, Symbol Icon, Type ViewType, bool IsPage);
 
 /// <summary>
-/// Attribute-based discovery with no compile-time dependency on any feature.
+/// Convention-based discovery with no compile-time dependency on any extension type.
 ///
 /// Rule:
-/// - each extension project exposes a PUBLIC entry UI type decorated with [NavItem]
-/// - that entry type is either a Page or a UserControl
+/// - every public, concrete Page or UserControl in an Ext.* assembly is an entry type
+/// - helper Page/UserControl types should be internal
 ///
-/// We first load any Ext.*.dll sitting next to the Shell, then scan those extension assemblies for
-/// [NavItem] types. With a stable Windows App SDK the Shell does not reference experimental
-/// extension projects, so they never enter the build graph or appear in the output.
+/// With a stable Windows App SDK the Shell does not reference experimental extension projects,
+/// so they never enter the build graph or appear in the output.
 /// </summary>
 public static class ModuleLoader
 {
@@ -29,16 +27,9 @@ public static class ModuleLoader
     {
         return LoadExtensionAssemblies()
             .SelectMany(SafeGetTypes)
-            .Select(t => (Type: t, Attr: t.GetCustomAttribute<NavItemAttribute>()))
-            .Where(x => x.Attr is not null && IsEntryUiType(x.Type))
-            .Select(x => new FeatureModule(
-                x.Attr!.Title,
-                ToSymbol(x.Attr.Icon),
-                x.Attr.Order,
-                x.Type,
-                typeof(Page).IsAssignableFrom(x.Type)))
-            .OrderBy(m => m.Order)
-            .ThenBy(m => m.Title, StringComparer.Ordinal)
+            .Where(IsEntryUiType)
+            .Select(CreateFeatureModule)
+            .OrderBy(m => m.Title, StringComparer.Ordinal)
             .ToList();
     }
 
@@ -105,12 +96,26 @@ public static class ModuleLoader
         return assembly.GetName().Name?.StartsWith("Ext.", StringComparison.OrdinalIgnoreCase) == true;
     }
 
-    private static Symbol ToSymbol(NavIcon icon)
+    private static FeatureModule CreateFeatureModule(Type type)
     {
-        return icon switch
+        var isPage = typeof(Page).IsAssignableFrom(type);
+        return new FeatureModule(
+            FormatTitle(type.Name),
+            isPage ? Symbol.Document : Symbol.Emoji,
+            type,
+            isPage);
+    }
+
+    private static string FormatTitle(string typeName)
+    {
+        foreach (var suffix in new[] { "View", "Page" })
         {
-            NavIcon.Emoji => Symbol.Emoji,
-            _ => Symbol.Document,
-        };
+            if (typeName.EndsWith(suffix, StringComparison.Ordinal) && typeName.Length > suffix.Length)
+            {
+                return typeName[..^suffix.Length];
+            }
+        }
+
+        return typeName;
     }
 }

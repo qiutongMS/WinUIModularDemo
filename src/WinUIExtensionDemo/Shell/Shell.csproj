@@ -2,11 +2,10 @@
 
   <!--
     Per-feature extensibility model (mirrors the WindowsAIFoundry sample):
-      Optional features live as independent class libraries under src\Extensions\<Feature>\.
+      Optional features live as independent class libraries under Extensions\<Feature>\.
       Which features exist and their maturity (stable vs experimental) is declared in
-      Extensions.props. The Shell references Contracts plus whichever extensions match the
-      current build flavor, then discovers [NavItem]-decorated entry types at startup via
-      reflection - so it has zero per-feature code.
+      Extensions.props. The Shell references whichever extensions match the current build
+      flavor, then discovers their public Page/UserControl types at startup via reflection.
   -->
   <Import Project="Extensions.props" />
 
@@ -26,11 +25,6 @@
     <WindowsPackageType>None</WindowsPackageType>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
   </PropertyGroup>
-
-  <!-- The Shell always references the SDK-neutral contract assembly (the [NavItem] attribute). -->
-  <ItemGroup>
-    <ProjectReference Include="..\Contracts\WinUIModularDemo.Contracts.csproj" />
-  </ItemGroup>
 
   <!-- Stable extensions: always referenced. -->
   <ItemGroup>

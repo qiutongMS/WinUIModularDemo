@@ -4,6 +4,14 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="ExtensionResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
     <StackPanel Spacing="12">
         <TextBlock Text="Hello from a UserControl feature (XAML)"
                    Style="{StaticResource TitleTextBlockStyle}" />
@@ -13,6 +21,8 @@
             AutomationProperties.AutomationId="HelloView_ClickButton"
             Content="Click me"
             Click="OnClick" />
-        <TextBlock x:Name="Status" />
+        <TextBlock x:Name="Status"
+                   Text="This style comes from the extension resource dictionary."
+                   Style="{StaticResource ExtensionStatusTextStyle}" />
     </StackPanel>
 </UserControl>
