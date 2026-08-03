@@ -39,6 +39,8 @@ public static class ModuleLoader
             .Select(a => a.GetName().Name!)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
+        // "Ext.*.dll" is only this sample's naming convention. Apps can choose their own
+        // extension project names and update this pattern together with IsExtensionAssembly.
         foreach (var dll in Directory.GetFiles(baseDir, "Ext.*.dll"))
         {
             var name = Path.GetFileNameWithoutExtension(dll);

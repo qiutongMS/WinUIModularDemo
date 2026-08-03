@@ -16,4 +16,9 @@
     <PackageReference Include="Microsoft.WindowsAppSDK" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Remove="Assets\ExtensionAsset.svg" />
+    <Content Include="Assets\ExtensionAsset.svg" />
+  </ItemGroup>
+
 </Project>

@@ -95,22 +95,34 @@ Keep helper `Page` and `UserControl` types `internal` so they are not discovered
 ## Extension resources
 
 `Ext.HelloUserControl` follows the WinUI class-library pattern used by WindowsAppSDK-Samples: an
-extension-owned `Resources.resw` file consumed from XAML through `x:Uid`:
+extension-owned `Resources.resw` file consumed by a specifically named `TextBlock` through
+`x:Uid`:
 
 ```xml
-<TextBlock x:Uid="ExtensionStatus" />
+<!-- ExtensionResourceText.Text is supplied by this project's Resources.resw. -->
+<TextBlock
+  x:Uid="ExtensionResourceText"
+  AutomationProperties.AutomationId="HelloView_ResourceText" />
 ```
 
 ```xml
-<data name="ExtensionStatus.Text" xml:space="preserve">
+<data name="ExtensionResourceText.Text" xml:space="preserve">
   <value>This text is loaded from the extension's Resources.resw.</value>
 </data>
 ```
 
 Building the extension produces its own `.pri` containing the compiled resource. The project
 reference copies the extension DLL and PRI beside the Shell, so the text resolves from the
-extension resource map when `HelloView` is created. An `Assets` folder would instead be appropriate
-for images or other media.
+extension resource map when `HelloView` is created.
+
+The same extension also owns `Assets\ExtensionAsset.svg` and displays it with a relative URI:
+
+```xml
+<Image Source="Assets/ExtensionAsset.svg" />
+```
+
+The SVG is indexed in the extension PRI and resolves relative to `HelloView.xaml`; the Shell does
+not need to know about or copy individual extension resources.
 
 The experimental Shell output therefore contains:
 
@@ -151,6 +163,8 @@ WinUIModularDemo/
           DemoPage.xaml
           Ext.HelloPage.csproj
         HelloUserControl/
+          Assets/
+            ExtensionAsset.svg
           HelloView.xaml
           Ext.HelloUserControl.csproj
           Resources.resw
