@@ -8,9 +8,6 @@ using Microsoft.UI.Xaml.Controls;
 
 namespace Shell;
 
-/// <summary>Metadata for one discovered extension entry type.</summary>
-public sealed record FeatureModule(string Title, Symbol Icon, Type ViewType, bool IsPage);
-
 /// <summary>
 /// Convention-based discovery with no compile-time dependency on any extension type.
 ///
@@ -23,13 +20,12 @@ public sealed record FeatureModule(string Title, Symbol Icon, Type ViewType, boo
 /// </summary>
 public static class ModuleLoader
 {
-    public static IReadOnlyList<FeatureModule> Discover()
+    public static IReadOnlyList<Type> Discover()
     {
         return LoadExtensionAssemblies()
             .SelectMany(SafeGetTypes)
             .Where(IsEntryUiType)
-            .Select(CreateFeatureModule)
-            .OrderBy(m => m.Title, StringComparer.Ordinal)
+            .OrderBy(type => type.Name, StringComparer.Ordinal)
             .ToList();
     }
 
@@ -96,26 +92,4 @@ public static class ModuleLoader
         return assembly.GetName().Name?.StartsWith("Ext.", StringComparison.OrdinalIgnoreCase) == true;
     }
 
-    private static FeatureModule CreateFeatureModule(Type type)
-    {
-        var isPage = typeof(Page).IsAssignableFrom(type);
-        return new FeatureModule(
-            FormatTitle(type.Name),
-            isPage ? Symbol.Document : Symbol.Emoji,
-            type,
-            isPage);
-    }
-
-    private static string FormatTitle(string typeName)
-    {
-        foreach (var suffix in new[] { "View", "Page" })
-        {
-            if (typeName.EndsWith(suffix, StringComparison.Ordinal) && typeName.Length > suffix.Length)
-            {
-                return typeName[..^suffix.Length];
-            }
-        }
-
-        return typeName;
-    }
 }

@@ -30,15 +30,14 @@ public sealed partial class MainWindow : Window
         {
             Nav.MenuItems.Add(new NavigationViewItemSeparator());
             Nav.MenuItems.Add(new NavigationViewItemHeader { Content = "Features" });
-            foreach (var m in modules)
+            foreach (var viewType in modules)
             {
                 var item = new NavigationViewItem
                 {
-                    Content = m.Title,
-                    Icon = new SymbolIcon(m.Icon),
-                    Tag = m,
+                    Content = viewType.Name,
+                    Tag = viewType,
                 };
-                AutomationProperties.SetAutomationId(item, $"Navigation_{m.ViewType.FullName}");
+                AutomationProperties.SetAutomationId(item, $"Navigation_{viewType.FullName}");
                 Nav.MenuItems.Add(item);
             }
         }
@@ -55,21 +54,21 @@ public sealed partial class MainWindow : Window
                 ShowHome();
                 break;
 
-            case FeatureModule m:
-                Show(m);
+            case Type viewType:
+                Show(viewType);
                 break;
         }
     }
 
-    private void Show(FeatureModule m)
+    private void Show(Type viewType)
     {
-        if (m.IsPage)
+        if (typeof(Page).IsAssignableFrom(viewType))
         {
             // A Page is navigation-aware. Hosting it in a Frame gives it OnNavigatedTo,
             // navigation parameters, and back-stack behavior.
             UserControlHost.Visibility = Visibility.Collapsed;
             PageHost.Visibility = Visibility.Visible;
-            PageHost.Navigate(m.ViewType);
+            PageHost.Navigate(viewType);
         }
         else
         {
@@ -77,7 +76,7 @@ public sealed partial class MainWindow : Window
             // does not get Page navigation lifecycle callbacks.
             PageHost.Visibility = Visibility.Collapsed;
             UserControlHost.Visibility = Visibility.Visible;
-            UserControlHost.Content = Activator.CreateInstance(m.ViewType);
+            UserControlHost.Content = Activator.CreateInstance(viewType);
         }
     }
 

@@ -82,28 +82,35 @@ No shared contract or registration attribute is required. At startup, `ModuleLoa
 `Ext.*.dll` files beside the Shell and treats every public, concrete `Page` or `UserControl` with
 a parameterless constructor as an entry type.
 
-Entry titles are derived by removing the `Page` or `View` suffix:
+The Shell uses the type name as the navigation title and hosts it according to its WinUI base
+type:
 
-| Extension type | Navigation title | Host |
-|---|---|---|
-| `Ext.HelloPage.DemoPage` | Demo | `Frame.Navigate(Type)` |
-| `Ext.HelloUserControl.HelloView` | Hello | `ContentControl.Content` |
+| Extension type | Host |
+|---|---|
+| `Ext.HelloPage.DemoPage` | `Frame.Navigate(Type)` |
+| `Ext.HelloUserControl.HelloView` | `ContentControl.Content` |
 
 Keep helper `Page` and `UserControl` types `internal` so they are not discovered as entries.
 
 ## Extension resources
 
-`Ext.HelloUserControl` demonstrates an extension-owned resource dictionary:
+`Ext.HelloUserControl` follows the WinUI class-library pattern used by WindowsAppSDK-Samples: an
+extension-owned `Resources.resw` file consumed from XAML through `x:Uid`:
 
 ```xml
-<ResourceDictionary Source="ExtensionResources.xaml" />
+<TextBlock x:Uid="ExtensionStatus" />
 ```
 
-`ExtensionResources.xaml` defines `ExtensionStatusTextStyle`, and `HelloView.xaml` consumes it with
-`{StaticResource ExtensionStatusTextStyle}`. Building the extension produces its own `.pri`
-containing the compiled XAML resources. The project reference copies the extension DLL and PRI
-beside the Shell, and the relative dictionary URI resolves within the extension when `HelloView`
-is created.
+```xml
+<data name="ExtensionStatus.Text" xml:space="preserve">
+  <value>This text is loaded from the extension's Resources.resw.</value>
+</data>
+```
+
+Building the extension produces its own `.pri` containing the compiled resource. The project
+reference copies the extension DLL and PRI beside the Shell, so the text resolves from the
+extension resource map when `HelloView` is created. An `Assets` folder would instead be appropriate
+for images or other media.
 
 The experimental Shell output therefore contains:
 
@@ -111,9 +118,6 @@ The experimental Shell output therefore contains:
 Ext.HelloUserControl.dll
 Ext.HelloUserControl.pri
 ```
-
-The extension PRI indexes `ExtensionResources.xbf` and `HelloView.xbf` under the
-`Ext.HelloUserControl` resource map.
 
 ## Add an experimental extension
 
@@ -147,7 +151,7 @@ WinUIModularDemo/
           DemoPage.xaml
           Ext.HelloPage.csproj
         HelloUserControl/
-          ExtensionResources.xaml
           HelloView.xaml
           Ext.HelloUserControl.csproj
+          Resources.resw
 ```
