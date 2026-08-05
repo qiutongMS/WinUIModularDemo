@@ -3,9 +3,11 @@
   <!--
     Per-feature extensibility model (mirrors the WindowsAIFoundry sample):
       Optional features live as independent class libraries under Extensions\<Feature>\.
-      Which features exist and their maturity (stable vs experimental) is declared in
-      Extensions.props. The Shell references whichever extensions match the current build
-      flavor, then discovers their public Page/UserControl types at startup via reflection.
+      Extensions.props declares the features and whether any of them currently require
+      experimental APIs. The Shell always references the extension projects, then discovers
+      their public Page/UserControl types at startup via reflection. An extension that
+      requires experimental APIs can build as an empty placeholder when those APIs are not
+      available, so the solution still exposes all extension code.
   -->
   <Import Project="Extensions.props" />
 
@@ -26,14 +28,9 @@
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
   </PropertyGroup>
 
-  <!-- Stable extensions: always referenced. -->
+  <!-- Extensions are always solution-visible; each extension decides whether it contributes UI for this build. -->
   <ItemGroup>
-    <ProjectReference Include="@(StableExtension -> '..\Extensions\%(Identity)\Ext.%(Identity).csproj')" />
-  </ItemGroup>
-
-  <!-- CI can force these into the build graph even when the SDK version has no "-exp" suffix. -->
-  <ItemGroup Condition="$([System.String]::Copy('$(WindowsAppSDKVersion)').Contains('-exp')) Or '$(BuildExperimentalExtensions)' == 'true'">
-    <ProjectReference Include="@(ExperimentalExtension -> '..\Extensions\%(Identity)\Ext.%(Identity).csproj')" />
+    <ProjectReference Include="@(Extension -> '..\Extensions\%(Identity)\Ext.%(Identity).csproj')" />
   </ItemGroup>
 
   <ItemGroup>

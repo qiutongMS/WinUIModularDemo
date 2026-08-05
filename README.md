@@ -1,4 +1,4 @@
-# WinUI extensions selected by the SDK version
+# WinUI extensions with per-feature API requirements
 
 This sample demonstrates a WinUI 3 Shell that conditionally builds and discovers extension
 projects containing either a `Page` or a `UserControl`.
@@ -35,46 +35,37 @@ The unpackaged, self-contained Shell is written to:
 src\WinUIExtensionDemo\Shell\bin\x64\Debug\net8.0-windows10.0.22621.0\Shell.exe
 ```
 
-## Select experimental extensions
+## Extension API requirements
 
-`Shell.csproj` includes experimental extension projects when the selected SDK version contains
-`-exp`:
+Extensions are optional modules; they are not inherently experimental. The extension list lives
+in `Shell\Extensions.props`, with a separate property for extensions that currently require
+experimental APIs:
 
 ```xml
-<ItemGroup
-  Condition="$([System.String]::Copy('$(WindowsAppSDKVersion)').Contains('-exp')) Or
-             '$(BuildExperimentalExtensions)' == 'true'">
-  <ProjectReference
-    Include="@(ExperimentalExtension -> '..\Extensions\%(Identity)\Ext.%(Identity).csproj')" />
+<PropertyGroup>
+  <ExtensionsRequiringExperimentalApis>HelloUserControl;HelloPage</ExtensionsRequiringExperimentalApis>
+</PropertyGroup>
+
+<ItemGroup>
+  <Extension Include="HelloUserControl" />
+  <Extension Include="HelloPage" />
 </ItemGroup>
 ```
 
-CI can explicitly force that build graph:
+When the selected `WindowsAppSDKVersion` contains `-exp`, those extensions compile normally and
+the Shell discovers their public `Page` or `UserControl` types at startup. With a stable SDK,
+extensions that require experimental APIs compile as empty placeholder assemblies, so they remain
+visible in the solution but contribute no navigation entries.
+
+CI can explicitly force experimental APIs to be treated as available:
 
 ```powershell
 dotnet build src\WinUIExtensionDemo\WinUIModularDemo.sln `
   -p:BuildExperimentalExtensions=true
 ```
 
-When forcing it, CI must also select a `WindowsAppSDKVersion` that provides every API used by the
-experimental extensions.
-
-The extension list lives in `Shell\Extensions.props`:
-
-```xml
-<ItemGroup>
-  <!-- StableExtension entries are always referenced. -->
-  <ExperimentalExtension Include="HelloUserControl" />
-  <ExperimentalExtension Include="HelloPage" />
-</ItemGroup>
-```
-
-The extension projects are intentionally not top-level solution entries. They enter the MSBuild
-graph only through the conditional `ProjectReference` items in the Shell.
-
-After changing between stable and experimental SDK versions in an existing checkout, run
-`dotnet clean src\WinUIExtensionDemo\WinUIModularDemo.sln` once before rebuilding. This removes
-generated XAML metadata and copied extension files from the previous graph.
+When forcing it, CI must also select a `WindowsAppSDKVersion` that provides every API used by
+extensions listed in `ExtensionsRequiringExperimentalApis`.
 
 ## Convention-based discovery
 
@@ -135,12 +126,15 @@ Ext.HelloUserControl.pri
 
 1. Create `src\WinUIExtensionDemo\Extensions\<Name>\Ext.<Name>.csproj`.
 2. Add one public entry `Page` or `UserControl`; keep helper UI types internal.
-3. Add `<ExperimentalExtension Include="<Name>" />` to
+3. Import `..\Extension.Build.props` from the extension project.
+4. Add `<Extension Include="<Name>" />` and, if needed, add `<Name>` to
+   `ExtensionsRequiringExperimentalApis` in
    `src\WinUIExtensionDemo\Shell\Extensions.props`.
-4. Run `build.cmd`.
+5. Add the extension project to `src\WinUIExtensionDemo\WinUIModularDemo.sln`.
+6. Run `build.cmd`.
 
-To promote an extension to stable, move its item from `ExperimentalExtension` to
-`StableExtension`.
+To promote an extension to stable, remove its name from `ExtensionsRequiringExperimentalApis`. No
+file moves or Shell changes are required.
 
 ## Project layout
 
@@ -159,6 +153,7 @@ WinUIModularDemo/
         ModuleLoader.cs
         Shell.csproj
       Extensions/
+        Extension.Build.props
         HelloPage/
           DemoPage.xaml
           Ext.HelloPage.csproj

@@ -15,8 +15,8 @@ namespace Shell;
 /// - every public, concrete Page or UserControl in an Ext.* assembly is an entry type
 /// - helper Page/UserControl types should be internal
 ///
-/// With a stable Windows App SDK the Shell does not reference experimental extension projects,
-/// so they never enter the build graph or appear in the output.
+/// When experimental APIs are not available, extensions that require them compile as
+/// placeholder assemblies and therefore contribute no entry UI types.
 /// </summary>
 public static class ModuleLoader
 {
