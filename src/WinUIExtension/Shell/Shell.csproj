@@ -24,7 +24,25 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="@(Extension -> '..\Extensions\%(Identity)\Ext.%(Identity).csproj')" />
+    <ProjectReference Include="@(StableExtension -> '..\Extensions\%(Identity)\Ext.%(Identity).csproj')" />
   </ItemGroup>
+
+  <ItemGroup Condition="'$(ExperimentalApisAvailable)' == 'true'">
+    <ProjectReference Include="@(ExperimentalExtension -> '..\Extensions\%(Identity)\Ext.%(Identity).csproj')" />
+  </ItemGroup>
+
+  <Target Name="RemoveStaleExtensionOutputs"
+          BeforeTargets="CopyFilesToOutputDirectory"
+          Condition="'$(ExperimentalApisAvailable)' != 'true'">
+    <ItemGroup>
+      <StaleExtensionFile Include="@(ExperimentalExtension -> '$(TargetDir)Ext.%(Identity).dll')" />
+      <StaleExtensionFile Include="@(ExperimentalExtension -> '$(TargetDir)Ext.%(Identity).pdb')" />
+      <StaleExtensionFile Include="@(ExperimentalExtension -> '$(TargetDir)Ext.%(Identity).pri')" />
+      <StaleExtensionDirectory Include="@(ExperimentalExtension -> '$(TargetDir)Ext.%(Identity)')" />
+    </ItemGroup>
+
+    <Delete Files="@(StaleExtensionFile)" />
+    <RemoveDir Directories="@(StaleExtensionDirectory)" />
+  </Target>
 
 </Project>
