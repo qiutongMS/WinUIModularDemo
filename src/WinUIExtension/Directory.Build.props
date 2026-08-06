@@ -1,0 +1,11 @@
+<Project>
+  <PropertyGroup>
+    <BuildPlatform>$(Platform)</BuildPlatform>
+    <BuildPlatform Condition="'$(BuildPlatform)' == '' or '$(BuildPlatform)' == 'AnyCPU' or '$(BuildPlatform)' == 'Any CPU'">x64</BuildPlatform>
+    <PlatformTarget Condition="'$(PlatformTarget)' == ''">$(BuildPlatform)</PlatformTarget>
+    <BaseOutputPath>bin\$(BuildPlatform)\</BaseOutputPath>
+    <BaseIntermediateOutputPath>obj\$(BuildPlatform)\</BaseIntermediateOutputPath>
+    <AppendPlatformToOutputPath>false</AppendPlatformToOutputPath>
+    <DefaultItemExcludes>$(DefaultItemExcludes);bin\**;obj\**</DefaultItemExcludes>
+  </PropertyGroup>
+</Project>
