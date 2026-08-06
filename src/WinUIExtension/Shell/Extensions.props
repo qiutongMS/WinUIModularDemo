@@ -1,0 +1,6 @@
+<Project>
+  <ItemGroup>
+    <Extension Include="HelloUserControl" />
+    <Extension Include="HelloPage" />
+  </ItemGroup>
+</Project>
