@@ -9,7 +9,20 @@
                    Style="{ThemeResource TitleTextBlockStyle}" />
         <TextBlock TextWrapping="Wrap"
                    Text="I am a UserControl defined in XAML. The Shell hosted me by setting ContentControl.Content = new HelloView(). No Page, no Frame." />
-        <Button Content="Click me" Click="OnClick" />
+        <TextBlock
+            x:Uid="ExtensionResourceText"
+            AutomationProperties.AutomationId="HelloView_ResourceText"
+            Style="{ThemeResource CaptionTextBlockStyle}" />
+        <Image
+            Width="64"
+            Height="64"
+            HorizontalAlignment="Left"
+            AutomationProperties.Name="Extension-owned asset"
+            Source="Assets/ExtensionAsset.svg" />
+        <Button
+            AutomationProperties.AutomationId="HelloView_ClickButton"
+            Content="Click me"
+            Click="OnClick" />
         <TextBlock x:Name="Status" Foreground="{ThemeResource SystemAccentColor}" />
     </StackPanel>
 </UserControl>
