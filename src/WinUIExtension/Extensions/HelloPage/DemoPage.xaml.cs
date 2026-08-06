@@ -2,7 +2,7 @@ using System;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
 
-namespace Shell;
+namespace Ext.HelloPage;
 
 public sealed partial class DemoPage : Page
 {

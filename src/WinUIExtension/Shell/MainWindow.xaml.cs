@@ -1,4 +1,6 @@
 using System;
+using Ext.HelloPage;
+using Ext.HelloUserControl;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 

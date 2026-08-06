@@ -21,4 +21,9 @@
     <PackageReference Include="Microsoft.WindowsAppSDK" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Extensions\HelloPage\Ext.HelloPage.csproj" />
+    <ProjectReference Include="..\Extensions\HelloUserControl\Ext.HelloUserControl.csproj" />
+  </ItemGroup>
+
 </Project>
