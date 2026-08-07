@@ -1,6 +1,6 @@
-# WinUI extensions with per-feature API requirements
+# WinUI extensions selected by the SDK version
 
-This sample demonstrates a WinUI 3 Shell that conditionally builds and discovers extension
+This sample demonstrates a WinUI 3 Shell that conditionally builds and composes extension
 projects containing either a `Page` or a `UserControl`.
 
 The sample project is self-contained under `src\WinUIExtensionDemo`, matching the folder shape
@@ -20,7 +20,7 @@ Choose the Windows App SDK version in
 Then build from the repository root:
 
 ```powershell
-dotnet build src\WinUIExtensionDemo\WinUIModularDemo.sln
+dotnet build src\WinUIExtensionDemo\WinUIExtensionDemo.slnf
 ```
 
 or:
@@ -35,53 +35,75 @@ The unpackaged, self-contained Shell is written to:
 src\WinUIExtensionDemo\Shell\bin\x64\Debug\net8.0-windows10.0.22621.0\Shell.exe
 ```
 
-## Extension API requirements
+## Select experimental extensions
 
-Extensions are optional modules; they are not inherently experimental. The extension list lives
-in `Shell\Extensions.props`, with a separate property for extensions that currently require
-experimental APIs:
+`Shell.csproj` includes the experimental extension projects and their direct composition source
+when the selected SDK version contains `-exp`:
 
 ```xml
-<PropertyGroup>
-  <ExtensionsRequiringExperimentalApis>HelloUserControl;HelloPage</ExtensionsRequiringExperimentalApis>
-</PropertyGroup>
-
-<ItemGroup>
-  <Extension Include="HelloUserControl" />
-  <Extension Include="HelloPage" />
+<ItemGroup
+  Condition="$([System.String]::Copy('$(WindowsAppSDKVersion)').Contains('-exp')) Or
+             '$(BuildExperimentalExtensions)' == 'true'">
+  <Compile Include="..\Extensions\HelloPage\ShellExtension.cs"
+           Link="Extensions\HelloPage\ShellExtension.cs" />
+  <Compile Include="..\Extensions\HelloUserControl\ShellExtension.cs"
+           Link="Extensions\HelloUserControl\ShellExtension.cs" />
+  <ProjectReference Include="..\Extensions\HelloPage\Ext.HelloPage.csproj" />
+  <ProjectReference Include="..\Extensions\HelloUserControl\Ext.HelloUserControl.csproj" />
 </ItemGroup>
 ```
 
-When the selected `WindowsAppSDKVersion` contains `-exp`, those extensions compile normally and
-the Shell discovers their public `Page` or `UserControl` types at startup. With a stable SDK,
-extensions that require experimental APIs compile as empty placeholder assemblies, so they remain
-visible in the solution but contribute no navigation entries.
-
-CI can explicitly force experimental APIs to be treated as available:
+CI can explicitly force that build graph:
 
 ```powershell
-dotnet build src\WinUIExtensionDemo\WinUIModularDemo.sln `
+dotnet build src\WinUIExtensionDemo\WinUIExtensionDemo.slnf `
   -p:BuildExperimentalExtensions=true
 ```
 
-When forcing it, CI must also select a `WindowsAppSDKVersion` that provides every API used by
-extensions listed in `ExtensionsRequiringExperimentalApis`.
+When forcing it, CI must also select a `WindowsAppSDKVersion` that provides every API used by the
+experimental extensions.
 
-## Convention-based discovery
+The single conditional block includes each extension's Shell composition source and project
+reference. On a stable SDK those source files and projects are both absent.
 
-No shared contract or registration attribute is required. At startup, `ModuleLoader` loads
-`Ext.*.dll` files beside the Shell and treats every public, concrete `Page` or `UserControl` with
-a parameterless constructor as an entry type.
+### Solution visibility follows project references
 
-The Shell uses the type name as the navigation title and hosts it according to its WinUI base
-type:
+Visual Studio `.sln` membership is static; it does not evaluate MSBuild `Condition` attributes to
+decide which projects appear. `WinUIModularDemo.sln` is therefore the complete project catalog: it
+lists Shell and both extension projects.
 
-| Extension type | Host |
-|---|---|
-| `Ext.HelloPage.DemoPage` | `Frame.Navigate(Type)` |
-| `Ext.HelloUserControl.HelloView` | `ContentControl.Content` |
+`WinUIExtensionDemo.slnf` is the normal entry point. It initially selects only Shell, and Visual
+Studio/MSBuild loads project dependencies from Shell's evaluated `ProjectReference` items:
 
-Keep helper `Page` and `UserControl` types `internal` so they are not discovered as entries.
+- Stable SDK: only Shell is loaded and built.
+- Experimental SDK or `BuildExperimentalExtensions=true`: both extension projects are loaded and
+  built with Shell.
+
+Open or build the `.slnf` to preserve that on-demand behavior. Opening or building the complete
+`.sln` intentionally loads/builds all cataloged projects.
+
+After changing between stable and experimental SDK versions in an existing checkout, run
+`dotnet clean src\WinUIExtensionDemo\WinUIExtensionDemo.slnf` once before rebuilding. This removes
+generated XAML metadata and copied extension files from the previous graph.
+
+## Native cross-project composition
+
+WinUI controls do not require a loader. Each extension folder owns a small Shell composition file:
+
+```csharp
+partial void AddHelloPageMenuItem()
+{
+    AddFeature(nameof(DemoPage), ..., () => ShowPage(typeof(DemoPage)));
+}
+```
+
+The extension `.csproj` excludes that file from its own assembly. Shell conditionally links and
+compiles it alongside the matching `ProjectReference`. `Frame.Navigate(pageType)` is the native
+Page path, and assigning `new HelloView()` to `ContentControl.Content` is the native UserControl
+path. There is no DLL scanning, reflection, `Assembly.LoadFrom`, or `Activator.CreateInstance`.
+
+On a stable SDK, both partial methods have no implementation, so the C# compiler removes their
+calls. Shell remains independent of extension types and assemblies.
 
 ## Extension resources
 
@@ -125,16 +147,13 @@ Ext.HelloUserControl.pri
 ## Add an experimental extension
 
 1. Create `src\WinUIExtensionDemo\Extensions\<Name>\Ext.<Name>.csproj`.
-2. Add one public entry `Page` or `UserControl`; keep helper UI types internal.
-3. Import `..\Extension.Build.props` from the extension project.
-4. Add `<Extension Include="<Name>" />` and, if needed, add `<Name>` to
-   `ExtensionsRequiringExperimentalApis` in
-   `src\WinUIExtensionDemo\Shell\Extensions.props`.
-5. Add the extension project to `src\WinUIExtensionDemo\WinUIModularDemo.sln`.
+2. Add a `ShellExtension.cs` partial implementation in that extension folder.
+3. Add the project reference to the conditional `ItemGroup` in `Shell.csproj`.
+4. Include `ShellExtension.cs` in the same conditional `ItemGroup`.
+5. Exclude `ShellExtension.cs` from the extension project's own compilation.
 6. Run `build.cmd`.
 
-To promote an extension to stable, remove its name from `ExtensionsRequiringExperimentalApis`. No
-file moves or Shell changes are required.
+To promote an extension to stable, make its project reference and composition source unconditional.
 
 ## Project layout
 
@@ -146,21 +165,21 @@ WinUIModularDemo/
     WinUIExtensionDemo/
       Directory.Build.props
       Directory.Packages.props
+      WinUIExtensionDemo.slnf
       WinUIModularDemo.sln
       Shell/
-        Extensions.props
         MainWindow.xaml
-        ModuleLoader.cs
         Shell.csproj
       Extensions/
-        Extension.Build.props
         HelloPage/
           DemoPage.xaml
           Ext.HelloPage.csproj
+          ShellExtension.cs
         HelloUserControl/
           Assets/
             ExtensionAsset.svg
           HelloView.xaml
           Ext.HelloUserControl.csproj
           Resources.resw
+          ShellExtension.cs
 ```

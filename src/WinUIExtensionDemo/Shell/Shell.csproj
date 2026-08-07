@@ -1,16 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!--
-    Per-feature extensibility model (mirrors the WindowsAIFoundry sample):
-      Optional features live as independent class libraries under Extensions\<Feature>\.
-      Extensions.props declares the features and whether any of them currently require
-      experimental APIs. The Shell always references the extension projects, then discovers
-      their public Page/UserControl types at startup via reflection. An extension that
-      requires experimental APIs can build as an empty placeholder when those APIs are not
-      available, so the solution still exposes all extension code.
-  -->
-  <Import Project="Extensions.props" />
-
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows10.0.22621.0</TargetFramework>
@@ -28,9 +17,13 @@
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
   </PropertyGroup>
 
-  <!-- Extensions are always solution-visible; each extension decides whether it contributes UI for this build. -->
-  <ItemGroup>
-    <ProjectReference Include="@(Extension -> '..\Extensions\%(Identity)\Ext.%(Identity).csproj')" />
+  <ItemGroup Condition="$([System.String]::Copy('$(WindowsAppSDKVersion)').Contains('-exp')) Or '$(BuildExperimentalExtensions)' == 'true'">
+    <Compile Include="..\Extensions\HelloPage\ShellExtension.cs"
+             Link="Extensions\HelloPage\ShellExtension.cs" />
+    <Compile Include="..\Extensions\HelloUserControl\ShellExtension.cs"
+             Link="Extensions\HelloUserControl\ShellExtension.cs" />
+    <ProjectReference Include="..\Extensions\HelloPage\Ext.HelloPage.csproj" />
+    <ProjectReference Include="..\Extensions\HelloUserControl\Ext.HelloUserControl.csproj" />
   </ItemGroup>
 
   <ItemGroup>
