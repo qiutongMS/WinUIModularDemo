@@ -14,14 +14,14 @@
         ItemInvoked="OnItemInvoked">
 
         <Grid Padding="24">
-            <!-- Hosts a feature whose entry type is a UserControl. -->
+            <!-- Hosts a composed UserControl extension. -->
             <ContentControl
                 x:Name="UserControlHost"
                 HorizontalContentAlignment="Stretch"
                 VerticalContentAlignment="Stretch"
                 Visibility="Collapsed" />
 
-            <!-- Hosts a feature whose entry type is a Page. -->
+            <!-- Hosts a composed Page extension. -->
             <Frame
                 x:Name="PageHost"
                 Visibility="Collapsed" />

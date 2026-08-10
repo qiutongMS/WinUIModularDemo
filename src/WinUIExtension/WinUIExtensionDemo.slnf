@@ -1,0 +1,8 @@
+{
+  "solution": {
+    "path": "WinUIModularDemo.sln",
+    "projects": [
+      "Shell\\Shell.csproj"
+    ]
+  }
+}

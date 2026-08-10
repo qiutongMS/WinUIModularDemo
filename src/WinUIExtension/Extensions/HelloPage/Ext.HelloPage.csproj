@@ -16,4 +16,9 @@
     <PackageReference Include="Microsoft.WindowsAppSDK" />
   </ItemGroup>
 
+  <!-- Shell conditionally links this file; do not compile it into the extension assembly. -->
+  <ItemGroup>
+    <Compile Remove="ShellExtension.cs" />
+  </ItemGroup>
+
 </Project>
