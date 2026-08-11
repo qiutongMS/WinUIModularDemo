@@ -68,12 +68,20 @@ reference. On a stable SDK those source files and projects are both absent.
 
 ### Solution build follows project references
 
-`WinUIModularDemo.sln` remains the single entry point for developers and automation. It contains
-Shell as its top-level project, and MSBuild follows Shell's evaluated `ProjectReference` items:
+`WinUIModularDemo.sln` remains the single entry point for developers and automation. All three
+projects are part of the solution so Visual Studio can load, restore, and edit them. Only Shell is
+selected for solution builds; Shell's evaluated `ProjectReference` items determine its build
+dependencies:
 
-- Stable SDK: only Shell is loaded and built.
-- Experimental SDK or `BuildExperimentalExtensions=true`: both extension projects are loaded and
-  built with Shell.
+- Stable SDK: Shell has no extension references, so only Shell is built.
+- Experimental SDK or `BuildExperimentalExtensions=true`: Shell builds both referenced extension
+  projects before building itself.
+
+The extension projects therefore have solution configuration mappings but no `Build.0` entries.
+`OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration=false` preserves dependency traversal
+for command-line solution builds. Visual Studio normally delegates project-reference builds to its
+solution build manager, so `BuildConditionalProjectReferencesInVisualStudio` builds only the
+references that Shell actually evaluated.
 
 The Visual Studio startup-project setting only selects what launches under the debugger; it does
 not control which projects a solution build compiles.
