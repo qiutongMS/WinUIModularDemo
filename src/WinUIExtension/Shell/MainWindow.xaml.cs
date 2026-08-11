@@ -1,6 +1,5 @@
 using System;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 
 namespace Shell;
@@ -20,7 +19,6 @@ public sealed partial class MainWindow : Window
             Content = "Home (core)",
             Tag = "home",
         };
-        AutomationProperties.SetAutomationId(homeItem, "Navigation_Home");
         Nav.MenuItems.Add(homeItem);
 
         var coreMenuItemCount = Nav.MenuItems.Count;
@@ -29,7 +27,7 @@ public sealed partial class MainWindow : Window
         if (Nav.MenuItems.Count > coreMenuItemCount)
         {
             Nav.MenuItems.Insert(coreMenuItemCount, new NavigationViewItemSeparator());
-            Nav.MenuItems.Insert(coreMenuItemCount + 1, new NavigationViewItemHeader { Content = "Experimental features" });
+            Nav.MenuItems.Insert(coreMenuItemCount + 1, new NavigationViewItemHeader { Content = "Features" });
         }
 
         Nav.SelectedItem = Nav.MenuItems[0];
@@ -40,14 +38,13 @@ public sealed partial class MainWindow : Window
 
     partial void AddHelloUserControlMenuItem();
 
-    private void AddFeature(string title, string automationId, Action show)
+    private void AddFeature(string title, Action show)
     {
         var item = new NavigationViewItem
         {
             Content = title,
             Tag = show,
         };
-        AutomationProperties.SetAutomationId(item, automationId);
         Nav.MenuItems.Add(item);
     }
 
@@ -92,8 +89,8 @@ public sealed partial class MainWindow : Window
                 new TextBlock
                 {
                     TextWrapping = TextWrapping.Wrap,
-                    Text = "This is the always-present core. Experimental features appear automatically " +
-                           "for a Windows App SDK -exp prerelease or when BuildExperimentalExtensions=true."
+                    Text = "This is the always-present core. Optional features are composed into the app " +
+                           "when their required APIs are available."
                 }
             }
         };

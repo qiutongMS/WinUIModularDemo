@@ -8,7 +8,6 @@ public sealed partial class MainWindow
     {
         AddFeature(
             nameof(HelloView),
-            $"Navigation_{typeof(HelloView).FullName}",
             () => ShowUserControl(new HelloView()));
     }
 }

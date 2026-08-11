@@ -6,7 +6,6 @@
 
     <NavigationView
         x:Name="Nav"
-        AutomationProperties.AutomationId="MainNavigation"
         IsBackButtonVisible="Collapsed"
         IsSettingsVisible="False"
         PaneDisplayMode="Left"
@@ -14,14 +13,14 @@
         ItemInvoked="OnItemInvoked">
 
         <Grid Padding="24">
-            <!-- Hosts a composed UserControl extension. -->
+            <!-- Hosts a feature whose entry type is a UserControl. -->
             <ContentControl
                 x:Name="UserControlHost"
                 HorizontalContentAlignment="Stretch"
                 VerticalContentAlignment="Stretch"
                 Visibility="Collapsed" />
 
-            <!-- Hosts a composed Page extension. -->
+            <!-- Hosts a feature whose entry type is a Page. -->
             <Frame
                 x:Name="PageHost"
                 Visibility="Collapsed" />

@@ -8,7 +8,6 @@ public sealed partial class MainWindow
     {
         AddFeature(
             nameof(DemoPage),
-            $"Navigation_{typeof(DemoPage).FullName}",
             () => ShowPage(typeof(DemoPage)));
     }
 }
