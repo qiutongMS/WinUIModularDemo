@@ -16,11 +16,6 @@
     <PackageReference Include="Microsoft.WindowsAppSDK" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Remove="Assets\ExtensionAsset.svg" />
-    <Content Include="Assets\ExtensionAsset.svg" />
-  </ItemGroup>
-
   <!-- Shell conditionally links this file; do not compile it into the extension assembly. -->
   <ItemGroup>
     <Compile Remove="ShellExtension.cs" />

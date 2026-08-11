@@ -99,31 +99,6 @@ path. There is no DLL scanning, reflection, `Assembly.LoadFrom`, or `Activator.C
 On a stable SDK, both partial methods have no implementation, so the C# compiler removes their
 calls. Shell remains independent of extension types and assemblies.
 
-## Extension resources
-
-`Ext.HelloUserControl` follows the WinUI class-library pattern used by WindowsAppSDK-Samples: an
-extension-owned `Resources.resw` file consumed by a specifically named `TextBlock` through
-`x:Uid`:
-
-```xml
-<TextBlock
-  x:Uid="ExtensionResourceText"
-  AutomationProperties.AutomationId="HelloView_ResourceText" />
-```
-
-Building the extension produces its own `.pri` containing the compiled resource. The project
-reference copies the extension DLL and PRI beside the Shell, so the text resolves from the
-extension resource map when `HelloView` is created.
-
-The same extension also owns `Assets\ExtensionAsset.svg` and displays it with a relative URI:
-
-```xml
-<Image Source="Assets/ExtensionAsset.svg" />
-```
-
-The SVG is indexed in the extension PRI and resolves relative to `HelloView.xaml`; the Shell does
-not need to know about or copy individual extension resources.
-
 ## Add an experimental extension
 
 1. Create `src\WinUIExtension\Extensions\<Name>\Ext.<Name>.csproj`.
@@ -155,10 +130,7 @@ WinUIModularDemo/
           Ext.HelloPage.csproj
           ShellExtension.cs
         HelloUserControl/
-          Assets/
-            ExtensionAsset.svg
           HelloView.xaml
           Ext.HelloUserControl.csproj
-          Resources.resw
           ShellExtension.cs
 ```
