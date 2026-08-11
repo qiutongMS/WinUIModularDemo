@@ -20,38 +20,18 @@
     <ExperimentalApisAvailable Condition="'$(ExperimentalApisAvailable)' == ''">false</ExperimentalApisAvailable>
   </PropertyGroup>
 
-  <ItemDefinitionGroup>
-    <Extension>
-      <RequiresExperimentalApis>false</RequiresExperimentalApis>
-    </Extension>
-  </ItemDefinitionGroup>
-
   <ItemGroup>
-    <Extension Include="HelloPage">
-      <RequiresExperimentalApis>true</RequiresExperimentalApis>
-      <ProjectPath>..\Extensions\HelloPage\Ext.HelloPage.csproj</ProjectPath>
-      <CompositionSource>..\Extensions\HelloPage\ShellExtension.cs</CompositionSource>
-      <CompositionLink>Extensions\HelloPage\ShellExtension.cs</CompositionLink>
-    </Extension>
-    <Extension Include="HelloUserControl">
-      <RequiresExperimentalApis>true</RequiresExperimentalApis>
-      <ProjectPath>..\Extensions\HelloUserControl\Ext.HelloUserControl.csproj</ProjectPath>
-      <CompositionSource>..\Extensions\HelloUserControl\ShellExtension.cs</CompositionSource>
-      <CompositionLink>Extensions\HelloUserControl\ShellExtension.cs</CompositionLink>
-    </Extension>
+    <ExtensionRequiringExperimentalApis Include="HelloPage" />
+    <ExtensionRequiringExperimentalApis Include="HelloUserControl" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ExtensionRequiringExperimentalApis Include="@(Extension->WithMetadataValue('RequiresExperimentalApis', 'true'))" />
-    <SelectedExtension Include="@(Extension->WithMetadataValue('RequiresExperimentalApis', 'false'))" />
-    <SelectedExtension Include="@(ExtensionRequiringExperimentalApis)"
-                       Condition="'$(ExperimentalApisAvailable)' == 'true'" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Include="@(SelectedExtension -> '%(CompositionSource)')"
-             Link="%(CompositionLink)" />
-    <ProjectReference Include="@(SelectedExtension -> '%(ProjectPath)')" />
+  <ItemGroup Condition="'$(ExperimentalApisAvailable)' == 'true'">
+    <Compile Include="..\Extensions\HelloPage\ShellExtension.cs"
+             Link="Extensions\HelloPage\ShellExtension.cs" />
+    <Compile Include="..\Extensions\HelloUserControl\ShellExtension.cs"
+             Link="Extensions\HelloUserControl\ShellExtension.cs" />
+    <ProjectReference Include="..\Extensions\HelloPage\Ext.HelloPage.csproj" />
+    <ProjectReference Include="..\Extensions\HelloUserControl\Ext.HelloUserControl.csproj" />
   </ItemGroup>
 
   <ItemGroup>

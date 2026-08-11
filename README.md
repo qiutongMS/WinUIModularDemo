@@ -35,22 +35,20 @@ src\WinUIExtension\Shell\bin\x64\Debug\net8.0-windows10.0.22621.0\Shell.exe
 
 ## Select extensions by API requirements
 
-Extensions are declared once with their project and Shell composition paths. Only extensions that
-currently require experimental APIs carry `RequiresExperimentalApis=true`:
+The Shell includes an extension's project and direct composition source when the selected SDK
+provides the APIs it requires:
 
 ```xml
-<ItemGroup>
-  <Extension Include="HelloPage">
-    <RequiresExperimentalApis>true</RequiresExperimentalApis>
-    <ProjectPath>..\Extensions\HelloPage\Ext.HelloPage.csproj</ProjectPath>
-    <CompositionSource>..\Extensions\HelloPage\ShellExtension.cs</CompositionSource>
-    <CompositionLink>Extensions\HelloPage\ShellExtension.cs</CompositionLink>
-  </Extension>
+<ItemGroup Condition="'$(ExperimentalApisAvailable)' == 'true'">
+  <Compile Include="..\Extensions\HelloPage\ShellExtension.cs"
+           Link="Extensions\HelloPage\ShellExtension.cs" />
+  <ProjectReference Include="..\Extensions\HelloPage\Ext.HelloPage.csproj" />
 </ItemGroup>
 ```
 
-`Shell.csproj` selects extensions whose requirements are available, then uses that one list to
-include both the extension project and its compiler-checked Shell composition source.
+The matching `Compile` and `ProjectReference` entries keep composition compiler-checked without a
+runtime loader. `ExtensionRequiringExperimentalApis` lists the same extension identities for
+stale-output cleanup when switching back to a stable SDK.
 
 CI can explicitly force that build graph:
 
@@ -62,8 +60,9 @@ dotnet build src\WinUIExtension\WinUIModularDemo.sln `
 When forcing it, CI must also select a `WindowsAppSDKVersion` that provides every API used by the
 experimental extensions.
 
-On a stable SDK, sources and projects that require experimental APIs are absent. An extension
-whose APIs have stabilized only needs `RequiresExperimentalApis` changed to `false`.
+On a stable SDK, sources and projects that require experimental APIs are absent. When an
+extension's APIs stabilize, move its `Compile` and `ProjectReference` entries outside the
+conditional ItemGroup and remove its identity from `ExtensionRequiringExperimentalApis`.
 
 ### Solution build entry point
 
@@ -104,12 +103,12 @@ calls. Shell remains independent of extension types and assemblies.
 
 1. Create `src\WinUIExtension\Extensions\<Name>\Ext.<Name>.csproj`.
 2. Add a `ShellExtension.cs` partial implementation in that extension folder.
-3. Add one `Extension` item with its API requirement, project path, and composition source to
-   `Shell.csproj`.
+3. Add its project reference and composition source to the matching ItemGroup in `Shell.csproj`.
 4. Exclude `ShellExtension.cs` from the extension project's own compilation.
 5. Run `build.cmd`.
 
-To promote an extension to stable, set `RequiresExperimentalApis` to `false`.
+To promote an extension to stable, make its project reference and composition source unconditional
+and remove it from the stale experimental output list.
 
 ## Project layout
 
