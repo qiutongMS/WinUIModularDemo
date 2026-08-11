@@ -15,9 +15,17 @@
     <!-- Unpackaged, self-contained: simplest to build and run from the CLI. -->
     <WindowsPackageType>None</WindowsPackageType>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <ExperimentalApisAvailable Condition="$([System.String]::Copy('$(WindowsAppSDKVersion)').Contains('-exp'))">true</ExperimentalApisAvailable>
+    <ExperimentalApisAvailable Condition="'$(BuildExperimentalExtensions)' == 'true'">true</ExperimentalApisAvailable>
+    <ExperimentalApisAvailable Condition="'$(ExperimentalApisAvailable)' == ''">false</ExperimentalApisAvailable>
   </PropertyGroup>
 
-  <ItemGroup Condition="$([System.String]::Copy('$(WindowsAppSDKVersion)').Contains('-exp')) Or '$(BuildExperimentalExtensions)' == 'true'">
+  <ItemGroup>
+    <ExperimentalExtension Include="HelloPage" />
+    <ExperimentalExtension Include="HelloUserControl" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(ExperimentalApisAvailable)' == 'true'">
     <Compile Include="..\Extensions\HelloPage\ShellExtension.cs"
              Link="Extensions\HelloPage\ShellExtension.cs" />
     <Compile Include="..\Extensions\HelloUserControl\ShellExtension.cs"
@@ -29,5 +37,19 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.WindowsAppSDK" />
   </ItemGroup>
+
+  <Target Name="RemoveStaleExtensionOutputs"
+          BeforeTargets="CopyFilesToOutputDirectory"
+          Condition="'$(ExperimentalApisAvailable)' != 'true'">
+    <ItemGroup>
+      <StaleExtensionFile Include="@(ExperimentalExtension -> '$(TargetDir)Ext.%(Identity).dll')" />
+      <StaleExtensionFile Include="@(ExperimentalExtension -> '$(TargetDir)Ext.%(Identity).pdb')" />
+      <StaleExtensionFile Include="@(ExperimentalExtension -> '$(TargetDir)Ext.%(Identity).pri')" />
+      <StaleExtensionDirectory Include="@(ExperimentalExtension -> '$(TargetDir)Ext.%(Identity)')" />
+    </ItemGroup>
+
+    <Delete Files="@(StaleExtensionFile)" />
+    <RemoveDir Directories="@(StaleExtensionDirectory)" />
+  </Target>
 
 </Project>
