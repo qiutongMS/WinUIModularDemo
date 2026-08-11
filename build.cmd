@@ -1,6 +1,5 @@
 @echo off
 setlocal
-REM Build the WinUI demo (a plain, single-project WinUI app).
 
 where dotnet >nul 2>&1
 if errorlevel 1 (
@@ -8,5 +7,5 @@ if errorlevel 1 (
     exit /b 1
 )
 
-dotnet build src\WinUIExtension\WinUIModularDemo.sln -p:Platform=x64 %1 %2 %3 %4
+dotnet build "%~dp0src\WinUIExtension\WinUIModularDemo.sln" -c Debug -p:Platform=x64 %*
 exit /b %errorlevel%

@@ -15,10 +15,41 @@
     <!-- Unpackaged, self-contained: simplest to build and run from the CLI. -->
     <WindowsPackageType>None</WindowsPackageType>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <ExperimentalApisAvailable Condition="$([System.String]::Copy('$(WindowsAppSDKVersion)').Contains('-exp'))">true</ExperimentalApisAvailable>
+    <ExperimentalApisAvailable Condition="'$(BuildExperimentalExtensions)' == 'true'">true</ExperimentalApisAvailable>
+    <ExperimentalApisAvailable Condition="'$(ExperimentalApisAvailable)' == ''">false</ExperimentalApisAvailable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ExtensionRequiringExperimentalApis Include="HelloPage" />
+    <ExtensionRequiringExperimentalApis Include="HelloUserControl" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(ExperimentalApisAvailable)' == 'true'">
+    <Compile Include="..\Extensions\HelloPage\ShellExtension.cs"
+             Link="Extensions\HelloPage\ShellExtension.cs" />
+    <Compile Include="..\Extensions\HelloUserControl\ShellExtension.cs"
+             Link="Extensions\HelloUserControl\ShellExtension.cs" />
+    <ProjectReference Include="..\Extensions\HelloPage\Ext.HelloPage.csproj" />
+    <ProjectReference Include="..\Extensions\HelloUserControl\Ext.HelloUserControl.csproj" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.WindowsAppSDK" />
   </ItemGroup>
+
+  <Target Name="RemoveStaleExtensionOutputs"
+          BeforeTargets="CopyFilesToOutputDirectory"
+          Condition="'$(ExperimentalApisAvailable)' != 'true'">
+    <ItemGroup>
+      <StaleExtensionFile Include="@(ExtensionRequiringExperimentalApis -> '$(TargetDir)Ext.%(Identity).dll')" />
+      <StaleExtensionFile Include="@(ExtensionRequiringExperimentalApis -> '$(TargetDir)Ext.%(Identity).pdb')" />
+      <StaleExtensionFile Include="@(ExtensionRequiringExperimentalApis -> '$(TargetDir)Ext.%(Identity).pri')" />
+      <StaleExtensionDirectory Include="@(ExtensionRequiringExperimentalApis -> '$(TargetDir)Ext.%(Identity)')" />
+    </ItemGroup>
+
+    <Delete Files="@(StaleExtensionFile)" />
+    <RemoveDir Directories="@(StaleExtensionDirectory)" />
+  </Target>
 
 </Project>

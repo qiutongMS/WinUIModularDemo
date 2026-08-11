@@ -2,7 +2,7 @@ using System;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
-namespace Shell;
+namespace Ext.HelloUserControl;
 
 public sealed partial class HelloView : UserControl
 {
