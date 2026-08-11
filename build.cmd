@@ -7,5 +7,5 @@ if errorlevel 1 (
     exit /b 1
 )
 
-dotnet build "%~dp0src\WinUIExtension\WinUIExtensionDemo.slnf" -c Debug -p:Platform=x64 %*
+dotnet build "%~dp0src\WinUIExtension\WinUIModularDemo.sln" -c Debug -p:Platform=x64 %*
 exit /b %errorlevel%

@@ -18,7 +18,7 @@ Choose the Windows App SDK version in
 Then build from the repository root:
 
 ```powershell
-dotnet build src\WinUIExtension\WinUIExtensionDemo.slnf
+dotnet build src\WinUIExtension\WinUIModularDemo.sln
 ```
 
 or:
@@ -54,7 +54,7 @@ when the selected SDK version contains `-exp`:
 CI can explicitly force that build graph:
 
 ```powershell
-dotnet build src\WinUIExtension\WinUIExtensionDemo.slnf `
+dotnet build src\WinUIExtension\WinUIModularDemo.sln `
   -p:BuildExperimentalExtensions=true
 ```
 
@@ -64,25 +64,21 @@ experimental extensions.
 The single conditional block includes each extension's Shell composition source and project
 reference. On a stable SDK those source files and projects are both absent.
 
-### Solution visibility follows project references
+### Solution build entry point
 
-Visual Studio `.sln` membership is static; it does not evaluate MSBuild `Condition` attributes to
-decide which projects appear. `WinUIModularDemo.sln` is therefore the complete project catalog: it
-lists Shell and both extension projects.
+`WinUIModularDemo.sln` contains only Shell as the solution build entry point. Extension projects
+are implementation details selected by Shell through conditional `ProjectReference` items:
 
-`WinUIExtensionDemo.slnf` is the normal entry point. It initially selects only Shell, and Visual
-Studio/MSBuild loads project dependencies from Shell's evaluated `ProjectReference` items:
+- Stable SDK: Shell builds without experimental extension source files or projects.
+- Experimental SDK or `BuildExperimentalExtensions=true`: Shell references and builds the
+  extension projects as dependencies.
 
-- Stable SDK: only Shell is loaded and built.
-- Experimental SDK or `BuildExperimentalExtensions=true`: both extension projects are loaded and
-  built with Shell.
+This keeps the build command the same for stable and experimental SDKs while avoiding placeholder
+extension assemblies. To inspect or edit extension project files in Visual Studio, open the files
+from the `Extensions` folder or temporarily add the project to the solution.
 
-Open or build the `.slnf` to preserve that on-demand behavior. Opening or building the complete
-`.sln` intentionally loads/builds all cataloged projects.
-
-After changing between stable and experimental SDK versions in an existing checkout, run
-`dotnet clean src\WinUIExtension\WinUIExtensionDemo.slnf` once before rebuilding. This removes
-generated XAML metadata and copied extension files from the previous graph.
+When switching from an experimental build to a stable build without cleaning, Shell removes stale
+extension DLL, PDB, PRI, and resource-directory outputs before copying its stable output.
 
 ## Native cross-project composition
 
@@ -149,7 +145,6 @@ WinUIModularDemo/
     WinUIExtension/
       Directory.Build.props
       Directory.Packages.props
-      WinUIExtensionDemo.slnf
       WinUIModularDemo.sln
       Shell/
         MainWindow.xaml
