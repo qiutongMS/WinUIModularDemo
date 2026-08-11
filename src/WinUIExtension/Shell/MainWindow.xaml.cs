@@ -23,26 +23,32 @@ public sealed partial class MainWindow : Window
         AutomationProperties.SetAutomationId(homeItem, "Navigation_Home");
         Nav.MenuItems.Add(homeItem);
 
-        var modules = ModuleLoader.Discover();
-        if (modules.Count > 0)
+        var coreMenuItemCount = Nav.MenuItems.Count;
+        AddHelloPageMenuItem();
+        AddHelloUserControlMenuItem();
+        if (Nav.MenuItems.Count > coreMenuItemCount)
         {
-            Nav.MenuItems.Add(new NavigationViewItemSeparator());
-            Nav.MenuItems.Add(new NavigationViewItemHeader { Content = "Features" });
-
-            foreach (var viewType in modules)
-            {
-                var item = new NavigationViewItem
-                {
-                    Content = viewType.Name,
-                    Tag = viewType,
-                };
-                AutomationProperties.SetAutomationId(item, $"Navigation_{viewType.FullName}");
-                Nav.MenuItems.Add(item);
-            }
+            Nav.MenuItems.Insert(coreMenuItemCount, new NavigationViewItemSeparator());
+            Nav.MenuItems.Insert(coreMenuItemCount + 1, new NavigationViewItemHeader { Content = "Experimental features" });
         }
 
         Nav.SelectedItem = Nav.MenuItems[0];
         ShowHome();
+    }
+
+    partial void AddHelloPageMenuItem();
+
+    partial void AddHelloUserControlMenuItem();
+
+    private void AddFeature(string title, string automationId, Action show)
+    {
+        var item = new NavigationViewItem
+        {
+            Content = title,
+            Tag = show,
+        };
+        AutomationProperties.SetAutomationId(item, automationId);
+        Nav.MenuItems.Add(item);
     }
 
     private void OnItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
@@ -53,26 +59,24 @@ public sealed partial class MainWindow : Window
                 ShowHome();
                 break;
 
-            case Type viewType:
-                Show(viewType);
+            case Action show:
+                show();
                 break;
         }
     }
 
-    private void Show(Type viewType)
+    private void ShowPage(Type pageType)
     {
-        if (typeof(Page).IsAssignableFrom(viewType))
-        {
-            UserControlHost.Visibility = Visibility.Collapsed;
-            PageHost.Visibility = Visibility.Visible;
-            PageHost.Navigate(viewType);
-        }
-        else
-        {
-            PageHost.Visibility = Visibility.Collapsed;
-            UserControlHost.Visibility = Visibility.Visible;
-            UserControlHost.Content = Activator.CreateInstance(viewType);
-        }
+        UserControlHost.Visibility = Visibility.Collapsed;
+        PageHost.Visibility = Visibility.Visible;
+        PageHost.Navigate(pageType);
+    }
+
+    private void ShowUserControl(UserControl control)
+    {
+        PageHost.Visibility = Visibility.Collapsed;
+        UserControlHost.Visibility = Visibility.Visible;
+        UserControlHost.Content = control;
     }
 
     private void ShowHome()
@@ -84,16 +88,12 @@ public sealed partial class MainWindow : Window
             Spacing = 12,
             Children =
             {
-                new TextBlock
-                {
-                    Text = "Core app",
-                    Style = (Style)Application.Current.Resources["TitleTextBlockStyle"],
-                },
+                new TextBlock { Text = "Core app", Style = (Style)Application.Current.Resources["TitleTextBlockStyle"] },
                 new TextBlock
                 {
                     TextWrapping = TextWrapping.Wrap,
-                    Text = "The Shell discovers extension Page and UserControl types at runtime " +
-                           "without knowing individual feature names."
+                    Text = "This is the always-present core. Experimental features appear automatically " +
+                           "for a Windows App SDK -exp prerelease or when BuildExperimentalExtensions=true."
                 }
             }
         };

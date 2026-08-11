@@ -6,9 +6,9 @@
 
     <StackPanel Spacing="12">
         <TextBlock Text="Hello from a Page feature (XAML)"
-                   Style="{ThemeResource TitleTextBlockStyle}" />
+                   Style="{StaticResource TitleTextBlockStyle}" />
         <TextBlock TextWrapping="Wrap"
                    Text="I am a Page defined in XAML. The Shell hosted me via Frame.Navigate(typeof(DemoPage)). Because a Frame drives me, I get navigation lifecycle callbacks." />
-        <TextBlock x:Name="Status" Foreground="{ThemeResource SystemAccentColor}" />
+        <TextBlock x:Name="Status" />
     </StackPanel>
 </Page>

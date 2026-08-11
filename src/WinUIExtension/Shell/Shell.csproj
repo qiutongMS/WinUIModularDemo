@@ -1,7 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <Import Project="Extensions.props" />
-
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows10.0.22621.0</TargetFramework>
@@ -19,30 +17,17 @@
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
   </PropertyGroup>
 
+  <ItemGroup Condition="$([System.String]::Copy('$(WindowsAppSDKVersion)').Contains('-exp')) Or '$(BuildExperimentalExtensions)' == 'true'">
+    <Compile Include="..\Extensions\HelloPage\ShellExtension.cs"
+             Link="Extensions\HelloPage\ShellExtension.cs" />
+    <Compile Include="..\Extensions\HelloUserControl\ShellExtension.cs"
+             Link="Extensions\HelloUserControl\ShellExtension.cs" />
+    <ProjectReference Include="..\Extensions\HelloPage\Ext.HelloPage.csproj" />
+    <ProjectReference Include="..\Extensions\HelloUserControl\Ext.HelloUserControl.csproj" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.WindowsAppSDK" />
   </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="@(StableExtension -> '..\Extensions\%(Identity)\Ext.%(Identity).csproj')" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(ExperimentalApisAvailable)' == 'true'">
-    <ProjectReference Include="@(ExperimentalExtension -> '..\Extensions\%(Identity)\Ext.%(Identity).csproj')" />
-  </ItemGroup>
-
-  <Target Name="RemoveStaleExtensionOutputs"
-          BeforeTargets="CopyFilesToOutputDirectory"
-          Condition="'$(ExperimentalApisAvailable)' != 'true'">
-    <ItemGroup>
-      <StaleExtensionFile Include="@(ExperimentalExtension -> '$(TargetDir)Ext.%(Identity).dll')" />
-      <StaleExtensionFile Include="@(ExperimentalExtension -> '$(TargetDir)Ext.%(Identity).pdb')" />
-      <StaleExtensionFile Include="@(ExperimentalExtension -> '$(TargetDir)Ext.%(Identity).pri')" />
-      <StaleExtensionDirectory Include="@(ExperimentalExtension -> '$(TargetDir)Ext.%(Identity)')" />
-    </ItemGroup>
-
-    <Delete Files="@(StaleExtensionFile)" />
-    <RemoveDir Directories="@(StaleExtensionDirectory)" />
-  </Target>
 
 </Project>
