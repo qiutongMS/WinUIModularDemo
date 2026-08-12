@@ -32,18 +32,13 @@
     <PackageReference Include="Microsoft.WindowsAppSDK" />
   </ItemGroup>
 
-  <!-- Visual Studio normally expects the solution build manager to build project references. -->
+  <!-- Visual Studio skips unchecked projects, so Shell builds only its evaluated references. -->
   <Target Name="BuildConditionalProjectReferencesInVisualStudio"
-          AfterTargets="PrepareProjectReferences"
           BeforeTargets="ResolveProjectReferences"
-          Condition="'$(BuildingInsideVisualStudio)' == 'true' And '$(DesignTimeBuild)' != 'true' And '@(_MSBuildProjectReferenceExistent)' != ''">
-    <MSBuild Projects="@(_MSBuildProjectReferenceExistent)"
+          Condition="'$(BuildingInsideVisualStudio)' == 'true' And '$(DesignTimeBuild)' != 'true' And '@(ProjectReference)' != ''">
+    <MSBuild Projects="@(ProjectReference)"
              Targets="Build"
-             BuildInParallel="$(BuildInParallel)"
-             Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration);
-                         %(_MSBuildProjectReferenceExistent.SetPlatform);
-                         %(_MSBuildProjectReferenceExistent.SetTargetFramework)"
-             RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences)" />
+             BuildInParallel="$(BuildInParallel)" />
   </Target>
 
 </Project>
