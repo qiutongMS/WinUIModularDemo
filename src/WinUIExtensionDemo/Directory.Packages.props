@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <WindowsAppSDKVersion Condition="'$(WindowsAppSDKVersion)' == ''">2.1.4-experimental8</WindowsAppSDKVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.WindowsAppSDK" Version="$(WindowsAppSDKVersion)" />
+  </ItemGroup>
+</Project>
